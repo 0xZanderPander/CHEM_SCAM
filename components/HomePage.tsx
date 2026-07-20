@@ -17,7 +17,7 @@ export function HomePage() {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState("");
-  const [form, setForm] = useState({ scammerName: "", website: "", description: "", nickname: "Suspicious Potato" });
+  const [form, setForm] = useState({ scammerName: "", website: "", description: "", nickname: "Suspicious Potato", company: "", startedAt: 0 });
 
   const loadReports = useCallback(async () => {
     const response = await fetch("/api/reports", { cache: "no-store" });
@@ -46,11 +46,11 @@ export function HomePage() {
     setSubmitting(true);
     setNotice("");
     const response = await fetch("/api/reports", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(form) });
-    const data = (await response.json()) as { error?: string; duplicate?: boolean };
+    const data = (await response.json()) as { error?: string; duplicate?: boolean; pendingReview?: boolean; possibleMatch?: string | null };
     if (!response.ok) setNotice(data.error ?? "We could not submit this report.");
     else {
-      setNotice(data.duplicate ? "Matched an existing listing and attached as a duplicate." : "Report published anonymously.");
-      setForm({ scammerName: "", website: "", description: "", nickname: randomNickname() });
+      setNotice(data.pendingReview ? "Report received for moderator review." : data.duplicate ? "Matched an existing domain and attached as a supporting report." : data.possibleMatch ? "Report published and flagged as a possible duplicate for moderator review." : "Report published anonymously.");
+      setForm({ scammerName: "", website: "", description: "", nickname: randomNickname(), company: "", startedAt: 0 });
       await loadReports();
       window.setTimeout(() => setOpen(false), 900);
     }
@@ -60,7 +60,7 @@ export function HomePage() {
   return (
     <main className="min-h-screen">
       <header className="bg-[#171412] text-white">
-        <div className="page-shell flex items-center justify-between gap-4 py-4"><Brand /><button className="button-yellow" onClick={() => setOpen(true)}>+ File a report</button></div>
+        <div className="page-shell flex items-center justify-between gap-4 py-4"><Brand /><button className="button-yellow" onClick={() => { setForm((current) => ({ ...current, startedAt: Date.now() })); setOpen(true); }}>+ File a report</button></div>
         <div className="hazard-stripe" />
       </header>
 
@@ -76,13 +76,13 @@ export function HomePage() {
 
         <div className="mt-7 grid gap-4">
           {loading ? <div className="empty-card">Loading community reports…</div> : filtered.length ? filtered.map((report) => <ReportCard key={report.id} report={report} onConfirmed={loadReports} />) : (
-            <div className="empty-card"><span className="text-3xl">◇</span><h2 className="font-display mt-3 text-xl font-bold">{query || status !== "All Reports" ? "No matching reports" : "No reports filed yet"}</h2><p className="mt-2 text-sm text-[#6b6558]">{query || status !== "All Reports" ? "Try another search or status." : "Be the first to add a good-faith community report."}</p>{!query && status === "All Reports" && <button className="button-primary mt-5" onClick={() => setOpen(true)}>File the first report</button>}</div>
+            <div className="empty-card"><span className="text-3xl">◇</span><h2 className="font-display mt-3 text-xl font-bold">{query || status !== "All Reports" ? "No matching reports" : "No reports filed yet"}</h2><p className="mt-2 text-sm text-[#6b6558]">{query || status !== "All Reports" ? "Try another search or status." : "Be the first to add a good-faith community report."}</p>{!query && status === "All Reports" && <button className="button-primary mt-5" onClick={() => { setForm((current) => ({ ...current, startedAt: Date.now() })); setOpen(true); }}>File the first report</button>}</div>
           )}
         </div>
       </section>
 
       <div className="hazard-stripe mt-10" />
-      <footer className="border-t-2 border-[#171412] bg-white"><div className="page-shell grid gap-6 py-8 text-[13px] leading-6 text-[#45403b] md:grid-cols-2"><p><b className="font-display mb-1 block text-sm text-[#171412]">Legal notice</b>This website contains community-submitted reports. Reports represent allegations submitted by users and should not be interpreted as verified facts. Exercise your own judgment before making decisions based on information posted here.</p><div className="font-display flex gap-6 md:justify-end"><a href="/admin" className="hover:text-[#e8590c]">Admin</a></div></div></footer>
+      <footer className="border-t-2 border-[#171412] bg-white"><div className="page-shell grid gap-6 py-8 text-[13px] leading-6 text-[#45403b] md:grid-cols-2"><p><b className="font-display mb-1 block text-sm text-[#171412]">Legal notice</b>This website contains community-submitted reports and allegations. Reports have not necessarily been independently verified and should not be interpreted as legal findings. Exercise your own judgment before making decisions based on information posted here.</p><div className="font-display flex gap-6 md:justify-end"><a href="/dispute" className="hover:text-[#e8590c]">Correction requests</a><a href="https://github.com/0xZanderPander/CHEM_SCAM" rel="noreferrer" className="hover:text-[#e8590c]">Source</a><a href="/admin" className="hover:text-[#e8590c]">Admin</a></div></div></footer>
 
       {open && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setOpen(false)}>
@@ -95,6 +95,7 @@ export function HomePage() {
                 <label><span className="field-label">Website URL <span className="font-normal text-[#6b6558]">(optional)</span></span><input className="field-input font-data mt-2 w-full" inputMode="url" maxLength={500} value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="example.com" /></label>
                 <label><span className="field-label">What happened? *</span><textarea className="field-input mt-2 min-h-28 w-full resize-y" required maxLength={2000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe what happened—be specific but factual." /></label>
                 <div className="border-2 border-[#d8d3c8] p-4"><NicknameField value={form.nickname} onChange={(nickname) => setForm({ ...form, nickname })} /></div>
+                <label className="absolute left-[-10000px]" aria-hidden="true">Company<input tabIndex={-1} autoComplete="off" value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} /></label>
                 {notice && <p className="text-sm font-bold" role="status">{notice}</p>}
                 <button className="button-primary justify-center py-3" disabled={submitting}>{submitting ? "Submitting…" : "Submit report"}</button>
                 <p className="text-center text-[11px] leading-5 text-[#6b6558]">By submitting, you confirm this report is made in good faith. False or malicious reports may be removed.</p>

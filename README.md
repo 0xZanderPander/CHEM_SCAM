@@ -1,70 +1,95 @@
 # PLACARD (code name: CHEM SCAM)
 
-A fast, anonymous community board for reporting suspicious chemical suppliers, websites, and online scammers. This MVP groups likely duplicate submissions, records one confirmation per browser, supports anonymous discussion, and includes a small password-protected moderation area.
+PLACARD is a small, anonymous community board for sharing allegations about suspicious chemical suppliers, websites, and online scammers. It preserves the original PLACARD interface while using a privacy-focused, self-hosted architecture:
 
-## What is included
+```text
+Internet → Caddy (TLS) → Next.js → PostgreSQL
+```
 
-- Anonymous report submission with generated or custom nicknames
-- Domain/name duplicate matching with attached duplicate accounts
-- Search by scammer name or domain
-- Browser-limited “I experienced this too” confirmations
-- Report detail pages, anonymous comments, and comment flagging
-- Statuses for unverified, confirmed, repeatedly reported, and disputed listings
-- Admin tools to remove content, merge reports, and mark reports disputed
-- Responsive, accessible UI and a prominent allegations disclaimer
+Reports are allegations, not legal findings. The software does not prove that a report, confirmation, or supporting account is true or comes from a unique person.
 
-## Project structure
+## Features
+
+- Anonymous reports, comments, comment flags, and browser-limited confirmations
+- Silly generated nicknames with an optional custom nickname
+- Exact-domain duplicate attachment; name-only matches stay separate for admin review
+- Published, pending-review, and removed publication states
+- Unverified, Community Confirmed, Repeatedly Reported, and sticky Disputed statuses
+- Password-protected admin sessions, CSRF protection, moderation audit events, and dispute queue
+- PostgreSQL-backed privacy-preserving rate limits
+- Docker Compose deployment with Caddy and PostgreSQL
+- Encrypted backup and documented restore scripts
+
+## Repository map
 
 ```text
 app/          Next.js pages and API routes
-components/   Reusable interface components
-db/           Database access and runtime schema setup
-drizzle/      Versioned SQLite/D1 migrations
-lib/          Shared nickname and admin utilities
-public/       Public image assets
-references/   Original visual and structural mockups
-tests/        Automated project checks
-worker/       Cloudflare worker entry point
+components/   PLACARD interface components
+db/           PostgreSQL schema and database access
+drizzle/      Versioned PostgreSQL migrations
+lib/          Validation, privacy, security, and shared helpers
+public/       Static assets
+references/   Original HTML design handoff
+scripts/      Encrypted backup and restore tools
+tests/        Vitest test suite
 ```
 
-The original static design handoff is preserved at `references/chem-scam-mockup.html`. Generated folders such as `node_modules`, `dist`, `.vinext`, and `.wrangler` are local build artifacts and are excluded from Git.
+The original design handoff is preserved at `references/chem-scam-mockup.html`.
 
-## Run locally
+## Local development
 
-Requirements: Node.js 22.13 or newer.
+Requirements: Node.js 22 and PostgreSQL 16 or newer.
 
 ```bash
 npm install
-cp .env.example .env.local
+cp .env.example .env
+```
+
+Set `NODE_ENV=development`, change `DATABASE_URL` to the local PostgreSQL connection, replace the placeholder secrets, create the database, then run:
+
+```bash
+npm run db:migrate
 npm run dev
 ```
 
-Set a strong `ADMIN_PASSWORD` in `.env.local`, then open `http://localhost:3000`. The moderation page is at `/admin`.
+Open `http://localhost:3000`; moderation is at `/admin`. Migrations are explicit and are never applied by application startup.
 
-The project uses Cloudflare D1, a hosted SQLite-compatible database. Local development automatically creates the database tables. Generate a migration after schema changes with:
+## Production with Docker
 
 ```bash
-npm run db:generate
+git clone https://github.com/0xZanderPander/CHEM_SCAM.git
+cd CHEM_SCAM
+cp .env.example .env
+# Replace every placeholder secret and set SITE_DOMAIN/SITE_URL.
+docker compose build
+docker compose up -d postgres
+docker compose --profile tools run --rm app-migrate
+docker compose up -d
 ```
 
-## Build
+Only Caddy publishes host ports (80 and 443). PostgreSQL and Next.js remain on internal Docker networks. See [DEPLOYMENT.md](DEPLOYMENT.md) for the complete launch, update, and rollback procedure.
+
+## Quality checks
 
 ```bash
+npm run lint
+npm run test
 npm run build
+docker compose config
+docker compose build
 ```
 
-## Deployment notes
+## Operations and policy
 
-The included setup is ready for Cloudflare/Sites deployment. For Vercel, the Next.js UI and API routes can be retained, but the D1 adapter in `db/index.ts` should be replaced with a Vercel-compatible durable database such as Supabase Postgres or Turso/libSQL; a file-based SQLite database is not durable on serverless Vercel functions.
+- [PRIVACY.md](PRIVACY.md) explains stored data, browser tokens, rate limits, retention, and limitations.
+- [MODERATION.md](MODERATION.md) explains publication review, disputes, removals, and prohibited content.
+- [BACKUP_AND_RESTORE.md](BACKUP_AND_RESTORE.md) covers encrypted daily backups and recovery.
+- [DEPLOYMENT.md](DEPLOYMENT.md) covers a provider-agnostic VPS deployment.
 
-Production checklist:
+## License
 
-- Set `ADMIN_PASSWORD` to a long random value.
-- Set `NEXT_PUBLIC_SITE_URL` to the public origin.
-- Add rate limiting, CAPTCHA, and stricter content moderation before broad promotion.
-- Publish a privacy policy and terms suitable for the jurisdictions where the service operates.
-- Establish a documented dispute/appeal and legal takedown process.
+CHEM SCAM is licensed under the [GNU Affero General Public License v3.0](LICENSE). If you modify the software and make it available over a network, the AGPL requires that users be offered the corresponding source code for that running version.
 
 ## Legal note
 
-CHEM SCAM displays community-submitted allegations. It does not independently verify reports. This repository is an MVP and is not legal advice.
+This website contains community-submitted reports and allegations. Reports have not necessarily been independently verified and should not be interpreted as legal findings. Exercise your own judgment before making decisions based on information posted here. This repository and its documentation are not legal advice.

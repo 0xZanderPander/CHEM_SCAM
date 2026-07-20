@@ -11,8 +11,8 @@ const statusTone: Record<Report["status"], string> = {
   Disputed: "diamond-disputed",
 };
 
-function browserFingerprint() {
-  const key = "chem-scam-browser-id";
+function browserToken() {
+  const key = "placard-browser-token";
   let value = localStorage.getItem(key);
   if (!value) {
     value = crypto.randomUUID();
@@ -31,7 +31,7 @@ export function ReportCard({ report, onConfirmed }: { report: Report; onConfirme
     const response = await fetch(`/api/reports/${report.id}/confirm`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ fingerprint: browserFingerprint() }),
+      body: JSON.stringify({ browserToken: browserToken() }),
     });
     const data = (await response.json()) as { error?: string };
     if (response.ok) {
@@ -64,11 +64,10 @@ export function ReportCard({ report, onConfirmed }: { report: Report; onConfirme
         </div>
       </div>
       <div className="mt-4 flex flex-wrap justify-end gap-2">
-        <button className="button-primary" onClick={confirm} disabled={busy || report.status === "Disputed"}>{report.status === "Disputed" ? "Confirmations paused" : busy ? "Adding…" : "I experienced this too"}</button>
+        <button className="button-primary" onClick={confirm} disabled={busy}>{busy ? "Adding…" : "I experienced this too"}</button>
         <Link href={`/reports/${report.id}`} className="button-secondary">View report →</Link>
       </div>
       {message && <p className="font-data mt-2 text-right text-xs text-[#6b6558]" role="status">{message}</p>}
     </article>
   );
 }
-

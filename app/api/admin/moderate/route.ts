@@ -1,58 +1,103 @@
-import { NextResponse } from "next/server";
-import { ensureDatabase, refreshStatus, type Report } from "@/db";
-import { isAdmin } from "@/lib/admin";
+import { NextRequest, NextResponse } from "next/server";
+import { query, refreshStatus, transaction, type Comment, type Report, type ReportStatus } from "@/db";
+import { isAdminRequest } from "@/lib/admin";
+import { csrfValid } from "@/lib/security";
+import { cleanText, PublicInputError, readJsonBody } from "@/lib/validation";
 
-export async function GET() {
-  if (!(await isAdmin())) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  const db = await ensureDatabase();
-  const [reports, comments] = await Promise.all([
-    db.prepare("SELECT * FROM reports WHERE removed = 0 ORDER BY created_at DESC").all<Report>(),
-    db.prepare("SELECT * FROM comments WHERE removed = 0 ORDER BY flagged DESC, created_at DESC").all(),
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest) {
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  const [reports, comments, disputes, duplicates] = await Promise.all([
+    query<Report>(
+      `SELECT id, scammer_name, website, normalized_domain, normalized_domain AS domain, description,
+       nickname, created_at, confirmation_count, confirmation_count AS confirmations, duplicate_count,
+       status, publication_state, possible_duplicate_of, removed_at
+       FROM reports WHERE removed_at IS NULL ORDER BY publication_state <> 'pending_review', created_at DESC`,
+    ),
+    query<Comment>(
+      "SELECT id, report_id, nickname, comment, created_at, flag_count, publication_state FROM comments WHERE removed_at IS NULL ORDER BY publication_state <> 'pending_review', flag_count DESC, created_at DESC",
+    ),
+    query("SELECT * FROM dispute_requests WHERE resolved = FALSE ORDER BY created_at ASC"),
+    query("SELECT id, report_id, nickname, description, website, created_at, publication_state FROM duplicate_reports WHERE removed_at IS NULL AND publication_state = 'pending_review' ORDER BY created_at ASC"),
   ]);
-  return NextResponse.json({ reports: reports.results, comments: comments.results });
+  return NextResponse.json({ reports: reports.rows, comments: comments.rows, disputes: disputes.rows, pendingDuplicates: duplicates.rows });
 }
 
-export async function POST(request: Request) {
-  if (!(await isAdmin())) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  const body = (await request.json()) as { action?: string; id?: string; targetId?: string };
-  const db = await ensureDatabase();
-  if (!body.id) return NextResponse.json({ error: "Missing item." }, { status: 400 });
+const statuses: ReportStatus[] = ["Unverified", "Community Confirmed", "Repeatedly Reported", "Disputed"];
 
-  switch (body.action) {
-    case "remove-report":
-      await db.prepare("UPDATE reports SET removed = 1 WHERE id = ?").bind(body.id).run();
-      break;
-    case "remove-comment":
-      await db.prepare("UPDATE comments SET removed = 1 WHERE id = ?").bind(body.id).run();
-      break;
-    case "dispute":
-      await db.prepare("UPDATE reports SET status = 'Disputed' WHERE id = ?").bind(body.id).run();
-      break;
-    case "merge": {
-      if (!body.targetId || body.targetId === body.id) {
-        return NextResponse.json({ error: "Choose a different target report." }, { status: 400 });
+export async function POST(request: NextRequest) {
+  if (!(await isAdminRequest(request)) || !csrfValid(request)) return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
+  try {
+    const body = await readJsonBody(request, 16_384);
+    const action = cleanText(body.action, 60, "Action");
+    const id = cleanText(body.id, 100, "Item");
+    const targetId = String(body.targetId ?? "").trim() || null;
+    const status = String(body.status ?? "") as ReportStatus;
+    const note = cleanText(body.note, 1_000, "Note", false) || null;
+
+    await transaction(async (client) => {
+      switch (action) {
+        case "remove-report":
+          await client.query("UPDATE reports SET publication_state = 'removed', removed_at = NOW() WHERE id = $1", [id]);
+          break;
+        case "remove-comment":
+          await client.query("UPDATE comments SET publication_state = 'removed', removed_at = NOW() WHERE id = $1", [id]);
+          break;
+        case "publish-report":
+          await client.query("UPDATE reports SET publication_state = 'published' WHERE id = $1 AND removed_at IS NULL", [id]);
+          break;
+        case "publish-comment":
+          await client.query("UPDATE comments SET publication_state = 'published' WHERE id = $1 AND removed_at IS NULL", [id]);
+          break;
+        case "publish-duplicate":
+          await client.query("UPDATE duplicate_reports SET publication_state = 'published' WHERE id = $1 AND removed_at IS NULL", [id]);
+          break;
+        case "set-status":
+          if (!statuses.includes(status)) throw new PublicInputError("Invalid status.");
+          await client.query("UPDATE reports SET status = $1 WHERE id = $2", [status, id]);
+          break;
+        case "merge": {
+          if (!targetId || targetId === id) throw new PublicInputError("Choose a different target report.");
+          const source = await client.query<Report>("SELECT * FROM reports WHERE id = $1 AND removed_at IS NULL", [id]);
+          if (!source.rows[0]) throw new PublicInputError("Source report not found.");
+          const row = source.rows[0];
+          await client.query(
+            "INSERT INTO duplicate_reports (report_id, nickname, description, website, created_at) VALUES ($1, $2, $3, $4, $5)",
+            [targetId, row.nickname, row.description, row.website, row.created_at],
+          );
+          await client.query("UPDATE duplicate_reports SET report_id = $1 WHERE report_id = $2", [targetId, id]);
+          await client.query("UPDATE comments SET report_id = $1 WHERE report_id = $2", [targetId, id]);
+          await client.query("INSERT INTO confirmations (report_id, confirmation_hash, created_at) SELECT $1, confirmation_hash, created_at FROM confirmations WHERE report_id = $2 ON CONFLICT DO NOTHING", [targetId, id]);
+          await client.query("DELETE FROM confirmations WHERE report_id = $1", [id]);
+          await client.query("UPDATE reports SET publication_state = 'removed', removed_at = NOW() WHERE id = $1", [id]);
+          await client.query(
+            `UPDATE reports SET
+              confirmation_count = (SELECT COUNT(*)::int FROM confirmations WHERE report_id = $1),
+              duplicate_count = (SELECT COUNT(*)::int FROM duplicate_reports WHERE report_id = $1 AND removed_at IS NULL)
+             WHERE id = $1`,
+            [targetId],
+          );
+          await refreshStatus(targetId, client);
+          break;
+        }
+        case "resolve-dispute":
+          await client.query("UPDATE dispute_requests SET resolved = TRUE, resolved_at = NOW(), resolved_note = $1 WHERE id = $2", [note, id]);
+          break;
+        default:
+          throw new PublicInputError("Unknown moderation action.");
       }
-      const source = await db.prepare("SELECT * FROM reports WHERE id = ? AND removed = 0").bind(body.id).first<Report>();
-      if (!source) return NextResponse.json({ error: "Source report not found." }, { status: 404 });
-      await db.batch([
-        db
-          .prepare("INSERT INTO duplicate_reports (id, report_id, nickname, description, website, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-          .bind(crypto.randomUUID(), body.targetId, source.nickname, source.description, source.website, source.created_at),
-        db
-          .prepare("UPDATE duplicate_reports SET report_id = ? WHERE report_id = ?")
-          .bind(body.targetId, body.id),
-        db.prepare("UPDATE comments SET report_id = ? WHERE report_id = ?").bind(body.targetId, body.id),
-        db
-          .prepare("UPDATE reports SET duplicate_count = duplicate_count + ? + 1, confirmations = confirmations + ? WHERE id = ?")
-          .bind(source.duplicate_count, source.confirmations, body.targetId),
-        db.prepare("UPDATE reports SET removed = 1 WHERE id = ?").bind(body.id),
-      ]);
-      await refreshStatus(body.targetId);
-      break;
-    }
-    default:
-      return NextResponse.json({ error: "Unknown moderation action." }, { status: 400 });
+      await client.query(
+        "INSERT INTO moderation_events (action, target_type, target_id, metadata) VALUES ($1, $2, $3, $4)",
+        [action, action.includes("comment") ? "comment" : action.includes("dispute") ? "dispute_request" : "report", id, JSON.stringify({ targetId, status, note })],
+      );
+    });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (error instanceof PublicInputError) return NextResponse.json({ error: error.message }, { status: 400 });
+    console.error("Moderation failed", error instanceof Error ? error.message : "unknown error");
+    return NextResponse.json({ error: "Moderation action failed." }, { status: 500 });
   }
-  return NextResponse.json({ ok: true });
 }
 
