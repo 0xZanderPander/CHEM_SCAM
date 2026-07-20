@@ -4,21 +4,18 @@ import { DocPage, type DocSection } from "@/components/DocPage";
 
 export const metadata: Metadata = {
   title: "Privacy & Policies",
-  description:
-    "PLACARD's privacy policy, moderation policy, report removal policy, and dispute policy — what is stored, for how long, and how to get something reviewed, corrected, or taken down.",
+  description: "What this site stores, how long it keeps it, how content is moderated, and how to get something removed.",
 };
 
 const sections: DocSection[] = [
-  { id: "summary", title: "Summary" },
-  { id: "privacy", title: "Privacy policy" },
+  { id: "privacy", title: "Privacy" },
   { id: "tokens", title: "Browser tokens" },
-  { id: "network", title: "IPs & rate limits" },
   { id: "retention", title: "Retention" },
-  { id: "moderation", title: "Moderation policy" },
-  { id: "removal", title: "Removal policy" },
-  { id: "dispute", title: "Dispute policy" },
+  { id: "moderation", title: "Moderation" },
+  { id: "removal", title: "Removals" },
+  { id: "dispute", title: "Disputes" },
   { id: "jurisdiction", title: "Jurisdiction" },
-  { id: "limits", title: "Limits of anonymity" },
+  { id: "limits", title: "Limits" },
 ];
 
 export default function Page() {
@@ -26,218 +23,146 @@ export default function Page() {
     <DocPage
       eyebrow="Privacy, moderation & removals"
       title="Privacy & Policies"
-      summary="How this site handles data, how content is moderated, and how to get a report corrected, disputed, or removed. Written to describe what the software actually does — the source is public, so you can check."
+      summary="What is stored, how content is moderated, and how to get a report corrected or removed."
       updated="20 July 2026"
       sections={sections}
     >
       <div className="doc-callout">
         <p>
-          <strong>The short version.</strong> No accounts. No email required. No analytics, ads, trackers, or
-          third-party fonts. Raw IP addresses are not intentionally stored. Anything you type into a public field is
-          public and effectively permanent. To get something reviewed or removed, use the{" "}
-          <Link href="/contact">contact form</Link>.
+          <strong>Short version.</strong> No accounts. No email. No analytics, ads, trackers, or third-party fonts. Raw
+          IP addresses are not stored. Anything typed into a public field is public and permanent. To get something
+          removed, use the <Link href="/contact">contact form</Link>.
         </p>
       </div>
 
-      <h2 id="summary">Summary</h2>
-      <p>
-        This page describes the default behaviour of the PLACARD software as deployed here. The operator is responsible
-        for disclosing any change to hosting, logging, retention, or third-party services. Because the source code is
-        published under the AGPL, the claims below are auditable rather than promissory.
-      </p>
-
-      <h2 id="privacy">Privacy policy</h2>
-      <h3>What the site collects</h3>
-      <p>
-        There are no public user accounts and no email address is required at any point. There is no analytics package,
-        no advertising network, no content delivery network, and no externally hosted fonts. Every asset is served from
-        this domain.
-      </p>
-      <p>The database stores:</p>
+      <h2 id="privacy">Privacy</h2>
+      <p>The database holds:</p>
       <ul>
-        <li>reports, supporting accounts, and comments, together with their generated nicknames and timestamps;</li>
-        <li>irreversible hashes representing confirmations and comment flags;</li>
-        <li>hashed administrator session tokens and their expiry;</li>
-        <li>short-lived, hashed rate-limit records;</li>
+        <li>reports, supporting accounts, and comments, with their nicknames and timestamps;</li>
+        <li>irreversible hashes representing confirmations and flags;</li>
+        <li>hashed admin sessions and short-lived rate-limit records;</li>
         <li>moderation audit events;</li>
-        <li>messages submitted through the contact form, including any contact channel you choose to provide.</li>
+        <li>contact-form messages, including any reply channel you choose to give.</li>
       </ul>
-      <h3>What is public</h3>
       <p>
-        Published reports, supporting accounts, comments, nicknames, dates, counts, and statuses are visible to
-        everyone. <strong>Assume search engines will index them.</strong>
+        <strong>Public:</strong> published reports, comments, nicknames, dates, counts, statuses. Assume search engines
+        index them. <strong>Not public:</strong> contact-form messages and any contact details in them.
       </p>
-      <h3>What is not public</h3>
       <p>
-        Messages sent through the contact form, and any contact channel you supply with them, are visible only to the
-        operator. They are not republished unless you explicitly ask for that.
-      </p>
-      <h3>What you should not submit</h3>
-      <p>
-        Do not include personal information that is not necessary to explain a report — not your own, and not anyone
-        else’s. An automated screen tries to catch likely phone numbers, addresses, payment-card numbers, threats, and
-        doxxing and routes those submissions for review before publication. <strong>That screen is imperfect</strong>: it
-        misses things and it produces false positives. It is a safety net, not a guarantee.
+        Do not include personal information that is not needed to explain a report. An automated screen tries to catch
+        phone numbers, addresses, card numbers, threats, and doxxing and holds those submissions for review.{" "}
+        <strong>It is imperfect</strong> — it misses things and flags harmless text.
       </p>
 
-      <h2 id="tokens">Browser tokens &amp; confirmations</h2>
+      <h2 id="tokens">Browser tokens &amp; IP addresses</h2>
       <p>
-        Your browser generates a random opaque token and stores it locally. That raw token is transmitted only when you
-        confirm a report or flag a comment. The server never stores it — it stores an HMAC-SHA256 value derived from the
-        token using a secret the server holds. A database constraint on that value limits one confirmation per report
-        and one flag per comment per browser.
+        Your browser stores a random token locally. It is sent only when you confirm a report or flag a comment, and the
+        server keeps an HMAC of it, never the token itself. That limits one confirmation per report and one flag per
+        comment per browser.
       </p>
       <p>
-        This is not device fingerprinting and it does not establish anyone’s identity. Clearing your browser storage
-        produces a new token. It follows that <strong>confirmation counts do not prove distinct people</strong>, and a
-        determined actor with multiple addresses can inflate them. Read counts accordingly.
-      </p>
-
-      <h2 id="network">Network addresses &amp; rate limiting</h2>
-      <p>
-        The application does not intentionally store raw visitor IP addresses. To enforce abuse limits it converts the
-        requester address into a date-scoped keyed HMAC and stores only that temporary value with an expiry; rows are
-        deleted once their window lapses.
+        This is not fingerprinting and does not identify anyone. Clearing browser storage produces a new token — so
+        confirmation counts <strong>do not prove distinct people</strong>.
       </p>
       <p>
-        That is an application-level design, not a promise that no system anywhere processes your address. The hosting
-        provider, network filtering, the operating system, Docker, the DNS provider, and the TLS reverse proxy all
-        necessarily handle connection data. Access logging in the supplied reverse-proxy configuration is disabled; if
-        the operator enables it, that change must be disclosed here.
+        Raw IP addresses are not stored. For abuse limits the address becomes a date-scoped keyed hash with an expiry.
+        That is an application-level design, not a promise about every system in the path: the host, the OS, Docker, DNS,
+        and the TLS proxy all handle connection data. Proxy access logging is off; if that changes it will be disclosed here.
       </p>
 
       <h2 id="retention">Retention</h2>
       <ul>
-        <li>
-          <strong>Removed content</strong> is soft-deleted by default so that moderation decisions remain auditable. It
-          is no longer public, but it is not immediately erased from the database.
-        </li>
-        <li>
-          <strong>Rate-limit records</strong> expire automatically within their window.
-        </li>
-        <li>
-          <strong>Encrypted backups</strong> are retained for a configured period — 14 days by default. A record removed
-          from the live site may persist in a backup until that window passes.
-        </li>
-        <li>
-          <strong>Moderation audit events</strong> are retained so enforcement can be reviewed for consistency.
-        </li>
+        <li><strong>Removed content</strong> is soft-deleted so decisions stay auditable — not public, not yet erased.</li>
+        <li><strong>Rate-limit records</strong> expire automatically.</li>
+        <li><strong>Encrypted backups</strong> are kept 14 days by default. Removed content can persist that long.</li>
+        <li><strong>Audit events</strong> are kept so enforcement can be reviewed.</li>
       </ul>
 
-      <h2 id="moderation">Moderation policy</h2>
-      <h3>Publication review</h3>
+      <h2 id="moderation">Moderation</h2>
       <p>
-        Ordinary submissions publish after validation. Submissions the automated screen finds potentially sensitive
-        enter a pending-review queue and are not public until a moderator acts. Flag counts prioritise review; a flag is
-        not itself a finding that a comment broke the rules.
+        Submissions publish after validation; anything the screen finds sensitive is held until a moderator acts. Flags
+        prioritise review but are not themselves a finding.
       </p>
-      <h3>Duplicates and merges</h3>
       <p>
-        An exact normalised-domain match attaches the new submission to the existing report as a supporting account.
-        A match on <em>name alone never silently merges anything</em> — it creates a separate report marked as a possible
-        match for a moderator to compare by hand. This is deliberate: similar names are common and merging on them would
-        let one report absorb an unrelated seller.
+        An exact domain match attaches a submission to the existing report. A name-only match{" "}
+        <em>never silently merges</em> — it creates a separate report for a human to compare, because merging on names
+        would let one report absorb an unrelated seller.
       </p>
-      <h3>Status thresholds</h3>
       <p>
-        Three confirmations can automatically produce <strong>Community Confirmed</strong>; two attached supporting
-        accounts can produce <strong>Repeatedly Reported</strong>. <strong>Disputed</strong> is only ever set by hand and
-        is sticky — counts keep accruing, but only an explicit moderator action moves the listing off Disputed. These
-        labels describe activity on this board, not proven misconduct.
-      </p>
-      <h3>Audit</h3>
-      <p>
-        Every material moderation action writes an audit event recording what was done, to what, and when. Prohibited
-        content is listed on the <Link href="/about#prohibited">About &amp; Terms</Link> page.
+        Three confirmations can produce <strong>Community Confirmed</strong>; two supporting accounts can produce{" "}
+        <strong>Repeatedly Reported</strong>. <strong>Disputed</strong> is set only by hand and is sticky. Every material
+        action writes an audit event. Prohibited content is listed on the{" "}
+        <Link href="/about#prohibited">About page</Link>.
       </p>
 
-      <h2 id="removal">Report removal policy</h2>
+      <h2 id="removal">Removals</h2>
       <p>
-        Anyone — including the subject of a report — may request removal through the{" "}
-        <Link href="/contact">contact form</Link>. You do not need a lawyer, and you do not need to identify yourself.
+        Anyone — including the subject of a report — can request removal via the{" "}
+        <Link href="/contact">contact form</Link>. No lawyer, no identification.
       </p>
-      <h3>How to make a request effective</h3>
       <p>
-        Include the report reference (the detail page pre-fills it), say plainly what is inaccurate or harmful, and
-        supply whatever supports that. Requests that simply assert the report is false, with nothing else, are the
-        hardest to act on.
+        Include the report reference, say what is inaccurate or harmful, and supply whatever supports that. A bare
+        assertion that a report is false is the hardest thing to act on.
       </p>
-      <h3>What is weighed</h3>
+      <p>What gets weighed:</p>
       <ul>
-        <li>whether the report contains unnecessary personal data — this alone is usually sufficient for removal;</li>
-        <li>the concrete risk of harm to an identifiable person;</li>
-        <li>whether the underlying allegation is still relevant or has been overtaken by events;</li>
-        <li>what evidence either side has supplied;</li>
-        <li>applicable law in the hosting jurisdiction;</li>
-        <li>whether a narrower remedy — correcting a detail, or applying the Disputed marker — is enough.</li>
+        <li>unnecessary personal data — usually sufficient on its own;</li>
+        <li>concrete risk of harm to an identifiable person;</li>
+        <li>whether the allegation is still relevant;</li>
+        <li>evidence from either side;</li>
+        <li>whether a correction or the Disputed marker is enough.</li>
       </ul>
-      <h3>Removed on sight</h3>
       <p>
-        Doxxing, credible threats, sexual content involving minors, and content unlawful where the server is hosted are
-        removed as soon as they are identified, without weighing anything else.
+        Doxxing, credible threats, sexual content involving minors, and unlawful content are removed immediately without
+        weighing anything else.
       </p>
-      <h3>Outcomes</h3>
       <p>
-        A request resolves as no action, report corrected, report marked Disputed, report removed, or other. Each
-        outcome is recorded with a written note. Marking a report disputed or removed is applied atomically with the
-        decision. If you left a contact channel, the operator will normally reply; without one, watch the report itself
-        for the change.
-      </p>
-      <h3>Limits</h3>
-      <p>
-        This is a good-faith moderation channel operated by one person, not a formal legal-notice intake system, and not
-        a statutory takedown mechanism. There is no service-level guarantee on response time. Removal from the live site
-        does not immediately purge encrypted backups; see <a href="#retention">retention</a>.
+        Outcomes: no action, corrected, marked Disputed, or removed — each recorded with a note. This is a good-faith
+        channel run by one person, not a statutory takedown system, and carries no guaranteed response time. Removal from
+        the site does not immediately purge <a href="#retention">backups</a>.
       </p>
 
-      <h2 id="dispute">Dispute policy</h2>
+      <h2 id="dispute">Disputes</h2>
       <p>
-        Where removal is not warranted but the accuracy of a report is genuinely contested, the report is marked{" "}
-        <strong>Disputed</strong> rather than deleted. This is the board’s default remedy for a contested-but-plausible
-        entry.
+        Where removal is not warranted but accuracy is genuinely contested, a report is marked{" "}
+        <strong>Disputed</strong> rather than deleted.
       </p>
       <ul>
-        <li>The Disputed marker is prominent and sits alongside the report wherever it appears.</li>
+        <li>The marker sits alongside the report wherever it appears.</li>
         <li>
-          It is <strong>sticky</strong>. Additional confirmations and supporting accounts do not clear it. Only an
-          explicit moderator action changes it — so a subject cannot be shouted down by volume, and a reporter cannot
-          restore standing by rallying confirmations.
+          It is <strong>sticky</strong> — further confirmations do not clear it. A subject cannot be shouted down by
+          volume, and a reporter cannot restore standing by rallying confirmations.
         </li>
-        <li>Either party may write in again with new information; a dispute can be revisited.</li>
-        <li>Disputing a report is not an admission by anyone, and the marker is not a finding that the report is false.</li>
+        <li>Either side can write in again with new information.</li>
+        <li>Disputing is not an admission, and the marker is not a finding that the report is false.</li>
       </ul>
-      <p>
-        The operator does not adjudicate the underlying commercial dispute. The board records that a disagreement exists
-        and lets readers weigh it.
-      </p>
+      <p>The operator does not adjudicate the underlying commercial dispute — only records that one exists.</p>
 
-      <h2 id="jurisdiction">Jurisdiction &amp; data protection</h2>
+      <h2 id="jurisdiction">Jurisdiction</h2>
       <p>
-        The reference deployment uses infrastructure in Iceland, whose legal framework includes publishing and
-        free-expression protections associated with the Icelandic Modern Media Initiative. That is not immunity.
+        The service runs on infrastructure in Iceland, which has publishing and free-expression protections. That is not
+        immunity.
       </p>
       <p>
-        Iceland is a member of the European Economic Area, and its Data Protection Act No. 90/2018 implements the GDPR
-        framework. A person named in a report who resides in the EU or EEA may therefore have a data-protection
-        complaint that is distinct from any defamation or takedown argument, and free-expression protections do not by
-        themselves resolve it. Hosting jurisdiction affects claims against the service and its infrastructure; it does
-        not by itself determine an individual operator’s exposure where that operator lives.
+        Iceland is in the EEA and applies the GDPR framework through its Data Protection Act No. 90/2018. Someone named
+        in a report who lives in the EU or EEA may have a data-protection complaint separate from any defamation
+        argument. Hosting jurisdiction affects claims against the service; it does not by itself determine an operator’s
+        exposure where they live.
       </p>
       <p>
-        This is general background, not legal advice, and not a guarantee of any legal outcome. Whatever the asserted
-        legal basis, the <Link href="/contact">contact form</Link> is the correction and removal channel.
+        General background, not legal advice. Whatever the legal basis, the <Link href="/contact">contact form</Link> is
+        the channel.
       </p>
 
       <h2 id="limits">Limits of anonymity</h2>
       <p>
-        No internet service can promise absolute anonymity or security. Realistically, you can be identified through
-        browser or device compromise, server compromise, correlation between your writing here and elsewhere, legal
-        process directed at the operator or a provider, operator error, and — most commonly —{" "}
+        No service can promise anonymity. You can be identified through device or server compromise, correlation with
+        your writing elsewhere, legal process, operator error, and — most commonly —{" "}
         <strong>details you volunteer in the report itself</strong>.
       </p>
       <p>
         If your safety depends on not being identified, do not rely on this site alone. Use a browser and network setup
-        appropriate to your threat model, and write your report so that it does not narrow down who you are.
+        suited to your threat model, and write so the report does not narrow down who you are.
       </p>
     </DocPage>
   );

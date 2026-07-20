@@ -61,9 +61,8 @@ export function ContactForm({ initialReportId = "" }: { initialReportId?: string
           <p className="eyebrow text-[#6b6558]">Contact the operator</p>
           <h1 className="font-display mt-3 text-4xl font-black leading-none text-[#171412]">Contact &amp; removals</h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-[#45403b]">
-            This form is the only way to reach the operator. There is no public email address — by design, so that
-            neither side of a dispute has to expose an identity to start one. Messages go to a private moderation queue
-            that only the operator can read.
+            The only way to reach the operator. No public email address, by design — neither side of a dispute has to
+            expose an identity to start one. Messages go to a private queue only the operator can read.
           </p>
         </div>
 
@@ -109,8 +108,7 @@ export function ContactForm({ initialReportId = "" }: { initialReportId?: string
                   placeholder="Paste the ID from the report page"
                 />
                 <span className="mt-1.5 block text-[12px] leading-5 text-[#6b6558]">
-                  Opening this form from a report pre-fills this. Without it, a removal or correction request is much
-                  harder to act on.
+                  Pre-filled if you came from a report. Without it, removals are much harder to act on.
                 </span>
               </label>
 
@@ -126,8 +124,8 @@ export function ContactForm({ initialReportId = "" }: { initialReportId?: string
                   placeholder="Email, Signal handle, Session ID, or another channel"
                 />
                 <span className="mt-1.5 block text-[12px] leading-5 text-[#6b6558]">
-                  Leave this blank to stay fully anonymous — your request is still read and acted on, you just will not
-                  get a reply. Whatever you enter is visible only to the operator.
+                  Blank is fine — your request is still read and acted on, you just get no reply. Visible only to the
+                  operator.
                 </span>
               </label>
 
@@ -181,23 +179,18 @@ export function ContactForm({ initialReportId = "" }: { initialReportId?: string
               <p className="font-display mb-2 text-[13px] font-bold text-[#171412]">Before you send</p>
               <ul className="grid gap-2 pl-4 [list-style:square]">
                 <li>
-                  Read the <Link href="/policy#removal" className="text-[#b34700] underline">removal policy</Link> — it
-                  lists exactly what is weighed.
+                  The <Link href="/policy#removal" className="text-[#b34700] underline">removal policy</Link> lists what
+                  gets weighed.
                 </li>
                 <li>
-                  Contested-but-plausible reports are normally marked{" "}
-                  <Link href="/policy#dispute" className="text-[#b34700] underline">Disputed</Link> rather than deleted.
+                  Contested reports are usually marked{" "}
+                  <Link href="/policy#dispute" className="text-[#b34700] underline">Disputed</Link>, not deleted.
                 </li>
-                <li>Doxxing, threats, and unlawful content are removed on sight — say so and it will be prioritised.</li>
-                <li>Do not include personal information that is not needed to explain your request.</li>
+                <li>Doxxing, threats, and unlawful content are removed on sight — say so and it is prioritised.</li>
+                <li>Leave out personal information not needed to explain your request.</li>
               </ul>
-            </div>
-
-            <div className="border-2 border-[#d8d3c8] bg-white p-4 text-[13px] leading-6 text-[#45403b]">
-              <p className="font-display mb-2 text-[13px] font-bold text-[#171412]">What this is not</p>
-              <p>
-                A good-faith moderation channel run by one person. It is not a formal legal-notice intake system and
-                carries no guaranteed response time. Submissions are rate limited.
+              <p className="mt-3 border-t border-[#d8d3c8] pt-3 text-[12px] text-[#6b6558]">
+                Run by one person. Not a legal-notice system, no guaranteed response time, rate limited.
               </p>
             </div>
           </aside>

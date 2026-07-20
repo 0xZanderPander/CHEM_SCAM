@@ -63,7 +63,7 @@ export function HomePage() {
       <SiteHeader action={<button className="button-yellow" onClick={() => { setForm((current) => ({ ...current, startedAt: Date.now() })); setOpen(true); }}>+ File a report</button>} />
 
       <div className="border-b border-[#d8d3c8] bg-white">
-        <div className="page-shell flex items-start gap-2.5 py-3 text-[13px] text-[#45403b]"><span aria-hidden="true">△</span><p><b>Community-submitted, unverified.</b> Reports reflect user allegations, not confirmed facts. Use your own judgment before acting on anything posted here. <a href="/about#how-it-works" className="underline underline-offset-2 hover:text-[#e8590c]">How this works</a> · <a href="/contact" className="underline underline-offset-2 hover:text-[#e8590c]">Request a removal</a></p></div>
+        <div className="page-shell flex items-start gap-2.5 py-3 text-[13px] text-[#45403b]"><span aria-hidden="true">△</span><p><b>Community-submitted, unverified.</b> Allegations, not confirmed facts. <a href="/about#how-it-works" className="underline underline-offset-2 hover:text-[#e8590c]">How this works</a> · <a href="/contact" className="underline underline-offset-2 hover:text-[#e8590c]">Request a removal</a></p></div>
       </div>
 
       <section className="page-shell py-8">
@@ -95,7 +95,7 @@ export function HomePage() {
                 <label className="absolute left-[-10000px]" aria-hidden="true">Company<input tabIndex={-1} autoComplete="off" value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} /></label>
                 {notice && <p className="text-sm font-bold" role="status">{notice}</p>}
                 <button className="button-primary justify-center py-3" disabled={submitting}>{submitting ? "Submitting…" : "Submit report"}</button>
-                <p className="text-center text-[11px] leading-5 text-[#6b6558]">By submitting, you confirm this report is made in good faith and agree to the <a href="/about#terms" className="underline underline-offset-2">terms</a> and <a href="/about#guidelines" className="underline underline-offset-2">community guidelines</a>. Do not include personal information about anyone. False or malicious reports may be removed.</p>
+                <p className="text-center text-[11px] leading-5 text-[#6b6558]">Submitting means good faith and agreeing to the <a href="/about#terms" className="underline underline-offset-2">terms</a> and <a href="/about#guidelines" className="underline underline-offset-2">guidelines</a>. No personal information about anyone.</p>
               </form>
             </div>
           </section>

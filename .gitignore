@@ -48,3 +48,6 @@ next-env.d.ts
 /.secrets/
 *.age
 age-key*.txt
+
+# generated UI snapshots — rebuild with scripts/snapshot-ui.py
+/ui-snapshots/
