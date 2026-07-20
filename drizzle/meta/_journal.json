@@ -1,12 +1,19 @@
 {
   "version": "7",
-  "dialect": "sqlite",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1784514241040,
-      "tag": "0000_violet_baron_zemo",
+      "version": "7",
+      "when": 1784518912810,
+      "tag": "0000_aberrant_gamma_corps",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784556950300,
+      "tag": "0001_thin_scorpion",
       "breakpoints": true
     }
   ]

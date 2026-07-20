@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
+<title>PLACARD — Community Chemical Scam Reports</title>
+
+<!--
+  =====================================================================
+  DESIGN HANDOFF NOTES FOR CODEX
+  =====================================================================
+  This is a static HTML/Tailwind(CDN) mockup, not the real app. It's
+  meant as a visual + structural reference for the Next.js/TS build.
+
+  Sections in this file (search for these HTML comments):
+    1. HEADER / NAV
+    2. LEGAL DISCLAIMER STRIP
+    3. SEARCH + STATUS FILTERS
+    4. REPORT CARD GRID (homepage)  <-- reusable <ReportCard /> component
+    5. SUBMIT REPORT MODAL          <-- reusable <SubmitReportForm />
+    6. REPORT DETAIL PAGE MOCKUP    <-- separate route: /reports/[id]
+    7. FOOTER
+
+  Design language: hazmat/DOT placard aesthetic used ONLY as accent
+  (diamond status badges, hazard-stripe dividers, mono data type).
+  Base layout stays plain: white bg, dark text, hairline borders,
+  no drop shadows, no heavy motion (150ms transitions max).
+
+  Status -> color mapping (see .status-diamond classes):
+    unverified          -> steel grey
+    community-confirmed -> hazard blue (deliberately NOT green — green reads as
+                            "verified safe," which is backwards here: this status
+                            means more people confirmed the scam, not that the
+                            site is trustworthy)
+    repeatedly-reported  -> hazard orange
+    disputed            -> hazard red (striped fill)
+
+  Fonts: Oswald (display/caps), IBM Plex Sans (body), IBM Plex Mono (data)
+
+  IMPORTANT: this design has no dark mode. Set `color-scheme: light` in
+  globals.css (or on <html>) so mobile browsers/WebViews don't auto-invert
+  the page under system dark mode. Without it, iOS Safari will force-dark
+  this into an unreadable inverted mess (confirmed on-device).
+  =====================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#171412',
+          paper: '#FFFFFF',
+          hairline: '#D8D3C8',
+          steel: '#6B6558',
+          hazyellow: '#FFC400',
+          hazorange: '#E8590C',
+          hazred: '#C81E1E',
+          hazblue: '#1B5FA8',
+        },
+        fontFamily: {
+          display: ['Oswald', 'sans-serif'],
+          body: ['"IBM Plex Sans"', 'sans-serif'],
+          mono: ['"IBM Plex Mono"', 'monospace'],
+        },
+      },
+    },
+  }
+</script>
+
+<style>
+  :root { color-scheme: light; }
+  html, body { background: #FFC400 !important; color-scheme: light; }
+  body { font-family: 'IBM Plex Sans', sans-serif; color: #171412 !important; background: #FFC400 !important; }
+  .font-display { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.02em; }
+  .font-data { font-family: 'IBM Plex Mono', monospace; }
+
+  /* Hazard stripe — used sparingly, as a divider accent only */
+  .hazard-stripe {
+    height: 6px;
+    background: repeating-linear-gradient(
+      -45deg,
+      #FFC400, #FFC400 10px,
+      #171412 10px, #171412 20px
+    );
+  }
+
+  /* Diamond status badge — the signature element */
+  .status-diamond {
+    width: 34px;
+    height: 34px;
+    transform: rotate(45deg);
+    border: 2.5px solid #171412;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .status-diamond svg { transform: rotate(-45deg); width: 15px; height: 15px; }
+
+  .diamond-unverified { background: #EFEDE7; }
+  .diamond-confirmed { background: #1B5FA8; }
+  .diamond-repeated { background: #E8590C; }
+  .diamond-disputed {
+    background: repeating-linear-gradient(45deg, #FFC400, #FFC400 5px, #171412 5px, #171412 10px);
+  }
+
+  .card-hover:hover { border-color: #171412; }
+
+  ::selection { background: #FFC400; color: #171412; }
+
+  .focus-ring:focus-visible {
+    outline: 2.5px solid #171412;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body class="antialiased" style="background-color:#FFC400;">
+
+<!-- =================== 1. HEADER / NAV =================== -->
+<header class="bg-ink border-b border-hairline">
+  <div class="max-w-6xl mx-auto px-5 py-4 flex items-center justify-between gap-4">
+    <a href="#" class="flex items-center gap-3 group">
+      <!-- Logo mark: warning triangle containing magnifying glass -->
+      <span class="flex items-center justify-center w-11 h-11 shrink-0">
+        <svg viewBox="0 0 48 48" class="w-11 h-11">
+          <polygon points="24,4 45,42 3,42" fill="#FFC400" stroke="#171412" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="21" cy="27" r="7" fill="none" stroke="#171412" stroke-width="2.5"/>
+          <line x1="26" y1="32" x2="32" y2="38" stroke="#171412" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <div class="leading-tight">
+        <div class="font-display font-700 text-2xl tracking-wide text-paper">PLACARD</div>
+        <div class="font-data text-[11px] text-[#B8AF9A] -mt-0.5">CHEMICAL SUPPLY SCAM REGISTRY</div>
+      </div>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-6 font-display text-sm">
+      <a href="#" class="text-paper hover:text-hazyellow transition-colors">Browse</a>
+      <a href="#" class="text-paper hover:text-hazyellow transition-colors">About</a>
+      <a href="#" class="text-paper hover:text-hazyellow transition-colors">Legal</a>
+    </nav>
+
+    <button onclick="document.getElementById('submitModal').classList.remove('hidden')"
+      class="font-display text-sm bg-hazyellow text-ink px-4 py-2.5 border-2 border-hazyellow hover:bg-paper hover:border-paper transition-colors focus-ring">
+      + File a Report
+    </button>
+  </div>
+  <div class="hazard-stripe"></div>
+</header>
+
+<!-- =================== 2. LEGAL DISCLAIMER STRIP =================== -->
+<div class="bg-paper border-b border-hairline">
+  <div class="max-w-6xl mx-auto px-5 py-2.5 flex items-start gap-2.5 text-[13px] text-ink/80">
+    <svg class="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#171412" stroke-width="2">
+      <path d="M12 2 L22 20 H2 Z" stroke-linejoin="round"/>
+      <line x1="12" y1="9" x2="12" y2="14"/>
+      <circle cx="12" cy="17" r="0.5" fill="#171412"/>
+    </svg>
+    <p><strong class="font-medium">Community-submitted, unverified.</strong> Reports reflect user allegations, not confirmed facts. Use your own judgment before acting on anything posted here.</p>
+  </div>
+</div>
+
+<main class="max-w-6xl mx-auto px-5 py-8">
+
+  <!-- =================== 3. SEARCH + STATUS FILTERS =================== -->
+  <div class="mb-7">
+    <div class="relative mb-4">
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-steel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" placeholder="Search by scammer name or domain…"
+        class="w-full font-body pl-11 pr-4 py-3 border-2 border-hairline focus:border-ink transition-colors focus-ring outline-none bg-paper" />
+    </div>
+    <div class="flex flex-wrap gap-2 font-display text-xs">
+      <button class="px-3 py-1.5 border-2 border-ink bg-ink text-paper">All Reports</button>
+      <button class="px-3 py-1.5 border-2 border-hairline bg-paper flex items-center gap-1.5 hover:border-ink transition-colors">
+        <span class="status-diamond diamond-repeated !w-3.5 !h-3.5 !border-[1.5px]"></span> Repeatedly Reported
+      </button>
+      <button class="px-3 py-1.5 border-2 border-hairline bg-paper flex items-center gap-1.5 hover:border-ink transition-colors">
+        <span class="status-diamond diamond-confirmed !w-3.5 !h-3.5 !border-[1.5px]"></span> Community Confirmed
+      </button>
+      <button class="px-3 py-1.5 border-2 border-hairline bg-paper flex items-center gap-1.5 hover:border-ink transition-colors">
+        <span class="status-diamond diamond-unverified !w-3.5 !h-3.5 !border-[1.5px]"></span> Unverified
+      </button>
+      <button class="px-3 py-1.5 border-2 border-hairline bg-paper flex items-center gap-1.5 hover:border-ink transition-colors">
+        <span class="status-diamond diamond-disputed !w-3.5 !h-3.5 !border-[1.5px]"></span> Disputed
+      </button>
+    </div>
+  </div>
+
+  <!-- =================== 4. REPORT CARD GRID =================== -->
+  <div class="grid gap-4">
+
+    <!-- Report Card (component: ReportCard) -->
+    <article class="card-hover border-2 border-hairline bg-paper p-5 transition-colors">
+      <div class="flex gap-4">
+        <span class="status-diamond diamond-repeated mt-1" title="Repeatedly Reported">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#171412" stroke-width="2.5"><path d="M12 4 L20 20 H4 Z" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="15"/></svg>
+        </span>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+            <h2 class="font-display text-lg font-600 truncate">ReagentSource Direct</h2>
+            <span class="font-display text-[11px] px-2 py-0.5 border border-hazorange text-hazorange shrink-0">REPEATEDLY REPORTED</span>
+          </div>
+          <a href="#" class="font-data text-sm text-steel hover:text-hazorange transition-colors break-all">reagentsourcedirect.net</a>
+          <p class="mt-2 text-[15px] leading-relaxed text-ink/90">Took payment for 500g of a research reagent, shipped an empty bag padded with dry ice packs. Site vanished two weeks later and reappeared under a new domain with identical product photos.</p>
+          <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] font-data text-steel">
+            <span>by <span class="text-ink font-medium">Suspicious Potato</span></span>
+            <span>·</span>
+            <span>Jul 14, 2026</span>
+            <span>·</span>
+            <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg> 18 confirmations</span>
+            <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="12" height="12" rx="1"/><path d="M8 20h12V8"/></svg> 6 duplicate reports</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end mt-3 gap-2">
+        <button class="font-display text-xs px-3 py-1.5 border-2 border-ink hover:bg-ink hover:text-paper transition-colors focus-ring">I experienced this too</button>
+        <a href="#" class="font-display text-xs px-3 py-1.5 border-2 border-hairline hover:border-ink transition-colors">View report →</a>
+      </div>
+    </article>
+
+    <!-- Report Card 2 -->
+    <article class="card-hover border-2 border-hairline bg-paper p-5 transition-colors">
+      <div class="flex gap-4">
+        <span class="status-diamond diamond-confirmed mt-1" title="Community Confirmed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#171412" stroke-width="2.5"><path d="M4 12l6 6L20 6"/></svg>
+        </span>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+            <h2 class="font-display text-lg font-600 truncate">LabGlass Wholesale Co</h2>
+            <span class="font-display text-[11px] px-2 py-0.5 border border-hazblue text-hazblue shrink-0">COMMUNITY CONFIRMED</span>
+          </div>
+          <a href="#" class="font-data text-sm text-steel hover:text-hazorange transition-colors break-all">labglasswholesale.biz</a>
+          <p class="mt-2 text-[15px] leading-relaxed text-ink/90">Advertised bulk borosilicate glassware at below-market prices via Discord DMs. Requested payment in gift cards "for tax reasons." No shipment, no response after payment.</p>
+          <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] font-data text-steel">
+            <span>by <span class="text-ink font-medium">Neon Pickle</span></span>
+            <span>·</span>
+            <span>Jul 12, 2026</span>
+            <span>·</span>
+            <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg> 9 confirmations</span>
+            <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="12" height="12" rx="1"/><path d="M8 20h12V8"/></svg> 2 duplicate reports</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end mt-3 gap-2">
+        <button class="font-display text-xs px-3 py-1.5 border-2 border-ink hover:bg-ink hover:text-paper transition-colors focus-ring">I experienced this too</button>
+        <a href="#" class="font-display text-xs px-3 py-1.5 border-2 border-hairline hover:border-ink transition-colors">View report →</a>
+      </div>
+    </article>
+
+    <!-- Report Card 3 (Unverified, single submission) -->
+    <article class="card-hover border-2 border-hairline bg-paper p-5 transition-colors">
+      <div class="flex gap-4">
+        <span class="status-diamond diamond-unverified mt-1" title="Unverified">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#171412" stroke-width="2.5"><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.75" fill="#171412"/></svg>
+        </span>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+            <h2 class="font-display text-lg font-600 truncate">"Dr. K. Nowak" — Telegram seller</h2>
+            <span class="font-display text-[11px] px-2 py-0.5 border border-steel text-steel shrink-0">UNVERIFIED</span>
+          </div>
+          <span class="font-data text-sm text-steel">no website — Telegram handle only</span>
+          <p class="mt-2 text-[15px] leading-relaxed text-ink/90">Claimed to be a chemistry PhD selling analytical standards direct from a university lab. Asked for upfront wire transfer, went silent after payment confirmation.</p>
+          <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] font-data text-steel">
+            <span>by <span class="text-ink font-medium">Cosmic Beaver</span></span>
+            <span>·</span>
+            <span>Jul 18, 2026</span>
+            <span>·</span>
+            <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg> 1 confirmation</span>
+            <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="12" height="12" rx="1"/><path d="M8 20h12V8"/></svg> 0 duplicate reports</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end mt-3 gap-2">
+        <button class="font-display text-xs px-3 py-1.5 border-2 border-ink hover:bg-ink hover:text-paper transition-colors focus-ring">I experienced this too</button>
+        <a href="#" class="font-display text-xs px-3 py-1.5 border-2 border-hairline hover:border-ink transition-colors">View report →</a>
+      </div>
+    </article>
+
+    <!-- Report Card 4 (Disputed) -->
+    <article class="card-hover border-2 border-hairline bg-paper p-5 transition-colors opacity-90">
+      <div class="flex gap-4">
+        <span class="status-diamond diamond-disputed mt-1" title="Disputed"></span>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+            <h2 class="font-display text-lg font-600 truncate">Coastal Chem Supply</h2>
+            <span class="font-display text-[11px] px-2 py-0.5 border border-hazred text-hazred shrink-0">DISPUTED</span>
+          </div>
+          <a href="#" class="font-data text-sm text-steel hover:text-hazorange transition-colors break-all">coastalchemsupply.com</a>
+          <p class="mt-2 text-[15px] leading-relaxed text-ink/90">Original report claimed non-delivery; several commenters report the order arrived late but complete. Flagged for moderator review — see discussion below.</p>
+          <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] font-data text-steel">
+            <span>by <span class="text-ink font-medium">Disco Llama</span></span>
+            <span>·</span>
+            <span>Jul 9, 2026</span>
+            <span>·</span>
+            <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg> 3 confirmations</span>
+            <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="12" height="12" rx="1"/><path d="M8 20h12V8"/></svg> 1 duplicate report</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end mt-3 gap-2">
+        <button class="font-display text-xs px-3 py-1.5 border-2 border-hairline text-steel cursor-not-allowed" disabled>Confirmations paused</button>
+        <a href="#" class="font-display text-xs px-3 py-1.5 border-2 border-hairline hover:border-ink transition-colors">View report →</a>
+      </div>
+    </article>
+
+  </div>
+</main>
+
+<!-- =================== 7. FOOTER =================== -->
+<div class="hazard-stripe mt-14"></div>
+<footer class="bg-paper border-t-2 border-ink">
+  <div class="max-w-6xl mx-auto px-5 py-8 grid md:grid-cols-2 gap-6 text-[13px] text-ink/80">
+    <p class="max-w-md leading-relaxed"><strong class="font-display block text-ink text-sm mb-1">Legal Notice</strong>This website contains community-submitted reports. Reports represent allegations submitted by users and should not be interpreted as verified facts. Exercise your own judgment before making decisions based on information posted here.</p>
+    <div class="flex md:justify-end items-start gap-6 font-display text-xs">
+      <a href="#" class="hover:text-hazorange transition-colors">About</a>
+      <a href="#" class="hover:text-hazorange transition-colors">Submission Guidelines</a>
+      <a href="#" class="hover:text-hazorange transition-colors">Admin</a>
+    </div>
+  </div>
+</footer>
+
+<!-- =================== 5. SUBMIT REPORT MODAL =================== -->
+<div id="submitModal" class="hidden fixed inset-0 bg-ink/50 z-50 flex items-start md:items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-paper border-2 border-ink max-w-lg w-full my-8">
+    <div class="hazard-stripe"></div>
+    <div class="p-6">
+      <div class="flex items-start justify-between mb-1">
+        <h3 class="font-display text-xl">File a Report</h3>
+        <button onclick="document.getElementById('submitModal').classList.add('hidden')" class="font-display text-steel hover:text-ink text-xl leading-none focus-ring" aria-label="Close">×</button>
+      </div>
+      <p class="text-[13px] text-steel mb-5">No account needed. Your submission is anonymous.</p>
+
+      <form class="space-y-4">
+        <div>
+          <label class="font-display text-xs block mb-1.5">Scammer / website name <span class="text-hazred">*</span></label>
+          <input type="text" required placeholder="e.g. ReagentSource Direct"
+            class="w-full border-2 border-hairline focus:border-ink px-3 py-2.5 outline-none transition-colors focus-ring" />
+        </div>
+        <div>
+          <label class="font-display text-xs block mb-1.5">Website URL <span class="text-steel normal-case font-body">(optional)</span></label>
+          <input type="url" placeholder="example.com"
+            class="w-full border-2 border-hairline focus:border-ink px-3 py-2.5 outline-none transition-colors focus-ring font-data text-sm" />
+        </div>
+        <div>
+          <label class="font-display text-xs block mb-1.5">What happened? <span class="text-hazred">*</span></label>
+          <textarea required rows="4" placeholder="Describe what happened — be specific but factual."
+            class="w-full border-2 border-hairline focus:border-ink px-3 py-2.5 outline-none transition-colors focus-ring resize-none"></textarea>
+        </div>
+
+        <!-- Anonymous nickname generator -->
+        <div class="border-2 border-hairline p-3.5">
+          <label class="font-display text-xs block mb-2">Your anonymous name</label>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span id="nicknamePreview" class="font-display font-600 text-base px-3 py-1.5 bg-hazyellow border-2 border-ink">Suspicious Potato</span>
+            <button type="button" onclick="document.getElementById('nicknamePreview').textContent = ['Angry Goose','Sleepy Ferret','Neon Pickle','Disco Llama','Cosmic Beaver','Feral Accountant','Static Walrus'][Math.floor(Math.random()*7)]"
+              class="font-display text-xs px-3 py-1.5 border-2 border-ink hover:bg-ink hover:text-paper transition-colors focus-ring">↻ Generate another</button>
+          </div>
+          <label class="font-display text-[11px] text-steel block mt-3 mb-1">or type your own nickname</label>
+          <input type="text" placeholder="optional, not unique"
+            class="w-full border-2 border-hairline focus:border-ink px-3 py-2 outline-none transition-colors text-sm focus-ring" />
+        </div>
+
+        <button type="submit" class="w-full font-display text-sm bg-ink text-paper py-3 border-2 border-ink hover:bg-hazorange hover:border-hazorange transition-colors focus-ring">
+          Submit report
+        </button>
+        <p class="text-[11px] text-steel text-center leading-relaxed">By submitting, you confirm this report is made in good faith. False or malicious reports may be removed.</p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================================
+  6. REPORT DETAIL PAGE MOCKUP — reference only, real route: /reports/[id]
+  This block is NOT part of the homepage; it's included below a divider
+  so Codex can see the intended detail-page layout in the same file.
+===================================================================== -->
+<div class="border-t-8 border-dashed border-hairline mt-16 pt-2 text-center">
+  <span class="font-data text-[11px] text-steel">↓ reference only — separate route: /reports/[id] ↓</span>
+</div>
+
+<main class="max-w-3xl mx-auto my-10 px-5 md:px-8 py-8 bg-paper border-2 border-hairline">
+  <a href="#" class="font-display text-xs text-steel hover:text-ink transition-colors">← Back to all reports</a>
+
+  <div class="flex items-start gap-4 mt-4 mb-2">
+    <span class="status-diamond diamond-repeated mt-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#171412" stroke-width="2.5"><path d="M12 4 L20 20 H4 Z" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="15"/></svg>
+    </span>
+    <div>
+      <h1 class="font-display text-2xl">ReagentSource Direct</h1>
+      <a href="#" class="font-data text-sm text-steel">reagentsourcedirect.net</a>
+    </div>
+  </div>
+
+  <p class="text-[15px] leading-relaxed mt-4">Took payment for 500g of a research reagent, shipped an empty bag padded with dry ice packs. Site vanished two weeks later and reappeared under a new domain with identical product photos. Payment was made via wire transfer; no refund was offered after multiple emails.</p>
+
+  <div class="flex items-center gap-4 mt-5 font-data text-[13px] text-steel">
+    <span>by <span class="text-ink font-medium">Suspicious Potato</span></span>
+    <span>·</span><span>Jul 14, 2026</span>
+  </div>
+
+  <div class="flex gap-2 mt-5">
+    <button class="font-display text-xs px-4 py-2 border-2 border-ink hover:bg-ink hover:text-paper transition-colors focus-ring">I experienced this too (18)</button>
+  </div>
+
+  <!-- Duplicate submissions -->
+  <section class="mt-10">
+    <h2 class="font-display text-sm text-steel mb-3">6 DUPLICATE REPORTS ON THIS LISTING</h2>
+    <div class="space-y-3">
+      <div class="border-l-4 border-hazorange pl-4 py-1">
+        <p class="text-[14px] leading-relaxed">Same site, same story — paid for solvent, got a tracking number that never updated. Domain matched exactly.</p>
+        <p class="font-data text-[12px] text-steel mt-1">Feral Accountant · Jul 16, 2026</p>
+      </div>
+      <div class="border-l-4 border-hazorange pl-4 py-1">
+        <p class="text-[14px] leading-relaxed">Reached out on the "support" email listed and got an auto-reply from a domain that doesn't match the storefront.</p>
+        <p class="font-data text-[12px] text-steel mt-1">Static Walrus · Jul 15, 2026</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comments -->
+  <section class="mt-10 border-t-2 border-hairline pt-6">
+    <button class="font-display text-sm flex items-center gap-2 mb-4">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      DISCUSSION (3) <span class="text-steel font-body normal-case text-xs">— click to collapse</span>
+    </button>
+
+    <div class="space-y-4 mb-6">
+      <div class="border-2 border-hairline p-3.5">
+        <p class="font-display text-xs mb-1">Angry Goose <span class="font-data text-steel font-body normal-case">· Jul 15, 2026</span></p>
+        <p class="text-[14px] leading-relaxed">Same thing happened to a colleague of mine last month. Glad this is documented.</p>
+        <button class="font-data text-[11px] text-steel hover:text-hazred mt-2 transition-colors">Report comment</button>
+      </div>
+    </div>
+
+    <div class="border-2 border-hairline p-3.5">
+      <label class="font-display text-xs block mb-1.5">Add a comment</label>
+      <input type="text" placeholder="nickname (optional)" class="w-full border-2 border-hairline focus:border-ink px-3 py-2 mb-2 outline-none text-sm transition-colors focus-ring" />
+      <textarea rows="2" placeholder="Your comment" class="w-full border-2 border-hairline focus:border-ink px-3 py-2 outline-none text-sm resize-none transition-colors focus-ring"></textarea>
+      <button class="font-display text-xs mt-2 px-4 py-2 border-2 border-ink hover:bg-ink hover:text-paper transition-colors focus-ring">Post comment</button>
+    </div>
+  </section>
+</main>
+
+</body>
+</html>
