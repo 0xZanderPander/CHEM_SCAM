@@ -1,5 +1,36 @@
 # Self-hosted deployment
 
+## Rehearse locally first
+
+Run the entire production stack on a workstation before paying for a server. Same
+images, same migrations, same Caddy — the only difference is that Caddy issues an
+internal certificate for `localhost` instead of a public one from Let's Encrypt.
+
+```bash
+cp .env.example .env          # then replace every placeholder secret
+# set SITE_DOMAIN=localhost and SITE_URL=https://localhost
+docker compose build
+docker compose up -d postgres
+docker compose --profile tools run --rm app-migrate
+docker compose up -d
+./scripts/smoke-test.sh       # 56 assertions against the real database
+```
+
+`scripts/smoke-test.sh` exercises what unit tests cannot: duplicate attachment
+against real constraints, confirmation and flag uniqueness, the sensitive-content
+screen, every contact category, honeypot and timing and size and rate limits,
+admin authentication, CSRF on both writes and logout, publish/remove round trips,
+soft deletion, and the security headers Caddy adds. It truncates the database on
+each run, so point it only at a disposable environment. Expect `curl` to warn
+about the self-signed certificate; the script passes `-k` deliberately.
+
+Also rehearse a restore before trusting one — see `BACKUP_AND_RESTORE.md`. A
+backup that has never been restored is not a backup.
+
+Tear down with `docker compose down -v`, which also drops the database volume.
+
+## Production target
+
 The reference target is a 1984.hosting VPS in Iceland with a domain registered through Njalla. 1984.hosting includes network-layer DDoS protection, so the reference design does not add a CDN or WAF proxy. Nothing in the application, Compose file, or Caddy configuration is tied to either provider.
 
 ## VPS and DNS
