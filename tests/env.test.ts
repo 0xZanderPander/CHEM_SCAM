@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { validateProductionEnvironment } from "@/lib/env";
 
+describe("test environment isolation", () => {
+  it("never runs the suite as production, whatever the shell exports", () => {
+    // Regression guard: an exported NODE_ENV=production leaked into the suite
+    // and tripped the production secret checks inside unrelated route tests,
+    // failing eight suites for reasons unconnected to the code under test.
+    expect(process.env.NODE_ENV).toBe("test");
+  });
+});
+
 describe("production environment validation", () => {
   afterEach(() => vi.unstubAllEnvs());
 
