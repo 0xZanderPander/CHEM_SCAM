@@ -13,6 +13,22 @@ A fast, anonymous community board for reporting suspicious chemical suppliers, w
 - Admin tools to remove content, merge reports, and mark reports disputed
 - Responsive, accessible UI and a prominent allegations disclaimer
 
+## Project structure
+
+```text
+app/          Next.js pages and API routes
+components/   Reusable interface components
+db/           Database access and runtime schema setup
+drizzle/      Versioned SQLite/D1 migrations
+lib/          Shared nickname and admin utilities
+public/       Public image assets
+references/   Original visual and structural mockups
+tests/        Automated project checks
+worker/       Cloudflare worker entry point
+```
+
+The original static design handoff is preserved at `references/chem-scam-mockup.html`. Generated folders such as `node_modules`, `dist`, `.vinext`, and `.wrangler` are local build artifacts and are excluded from Git.
+
 ## Run locally
 
 Requirements: Node.js 22.13 or newer.
