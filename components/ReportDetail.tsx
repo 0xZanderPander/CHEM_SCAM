@@ -151,7 +151,7 @@ export function ReportDetail({ id }: { id: string }) {
             <div className="border-2 border-[#d8d3c8] bg-white p-5 text-xs leading-6 text-neutral-600">
               <p className="font-extrabold text-neutral-950">Important context</p>
               <p className="mt-2">This is an allegation submitted by community members, not a verified finding. Review the details and make your own assessment.</p>
-              <Link href={`/dispute?report=${encodeURIComponent(report.id)}`} className="mt-4 inline-block font-bold underline underline-offset-4">Request correction / dispute this listing</Link>
+              <Link href={`/contact?report=${encodeURIComponent(report.id)}`} className="mt-4 inline-block font-bold underline underline-offset-4">Request correction / dispute this listing</Link>
             </div>
           </aside>
         </div>

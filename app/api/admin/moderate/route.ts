@@ -75,7 +75,13 @@ export async function GET(request: NextRequest) {
       [pageSize, (commentPage - 1) * pageSize],
     ),
     query<CountRow>(`SELECT COUNT(*)::int AS count FROM comments WHERE ${commentWhere}`),
-    query("SELECT id, report_id, contact_info, message, created_at FROM dispute_requests WHERE resolved = FALSE ORDER BY created_at ASC LIMIT 50"),
+    // Security and conduct reports are surfaced above routine correction
+    // requests; within a bucket the oldest request is still triaged first.
+    query(`SELECT id, report_id, category, contact_info, message, created_at
+           FROM dispute_requests
+           WHERE resolved = FALSE
+           ORDER BY CASE category WHEN 'security' THEN 0 WHEN 'conduct' THEN 1 ELSE 2 END, created_at ASC
+           LIMIT 50`),
     query("SELECT id, report_id, nickname, description, website, created_at, publication_state FROM duplicate_reports WHERE removed_at IS NULL ORDER BY publication_state <> 'pending_review', created_at DESC LIMIT 50"),
     query<ModerationEventRow>("SELECT id, action, target_type, target_id, created_at, metadata FROM moderation_events ORDER BY created_at DESC LIMIT 50"),
     query<{ id: string; scammer_name: string }>("SELECT id, scammer_name FROM reports WHERE removed_at IS NULL ORDER BY created_at DESC LIMIT 100"),

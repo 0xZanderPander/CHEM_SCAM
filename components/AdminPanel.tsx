@@ -3,9 +3,21 @@
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { Comment, DisputeResolutionType, Report, ReportStatus } from "@/db";
+import type { RequestCategory } from "@/db/schema";
 import { Brand } from "./Brand";
 
-type DisputeRequest = { id: string; report_id: string | null; contact_info: string | null; message: string; created_at: string };
+type DisputeRequest = { id: string; report_id: string | null; category: RequestCategory; contact_info: string | null; message: string; created_at: string };
+
+const categoryLabels: Record<RequestCategory, string> = {
+  removal: "Removal request",
+  correction: "Correction",
+  dispute: "Dispute",
+  conduct: "Rule breach",
+  security: "Security issue",
+  general: "General",
+};
+
+const urgentCategories: RequestCategory[] = ["security", "conduct"];
 type SupportingAccount = { id: string; report_id: string; nickname: string; description: string; website: string | null; created_at: string; publication_state: string };
 type MergeTarget = { id: string; scammer_name: string };
 type ModerationEvent = { id: string; action: string; target_type: string; target_id: string; created_at: string; metadata_summary: string | null };
@@ -136,10 +148,11 @@ export function AdminPanel() {
             {notice && <p className="border-2 border-[#171412] bg-white px-4 py-3 text-sm font-bold" role="status">{notice}</p>}
 
             <section>
-              <h2 className="font-display text-xl font-extrabold">Correction / dispute requests ({data.disputes.length})</h2>
+              <h2 className="font-display text-xl font-extrabold">Contact &amp; dispute queue ({data.disputes.length})</h2>
               <div className="mt-4 grid gap-3">
                 {data.disputes.length ? data.disputes.map((request) => (
-                  <article className="border-2 border-[#e8590c] bg-white p-5" key={request.id}>
+                  <article className={`border-2 bg-white p-5 ${urgentCategories.includes(request.category) ? "border-[#dc2626]" : "border-[#e8590c]"}`} key={request.id}>
+                    <p className="status-label mb-3 inline-block">{categoryLabels[request.category] ?? request.category}</p>
                     <p className="text-sm leading-7">{request.message}</p>
                     <p className="font-data mt-2 text-xs text-neutral-500">Report: {request.report_id || "Not supplied"} · Contact: {request.contact_info || "Not supplied"}</p>
                     {request.report_id && <Link href={`/reports/${request.report_id}`} className="button-secondary mt-4">View report</Link>}

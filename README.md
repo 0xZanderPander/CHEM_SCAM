@@ -20,6 +20,22 @@ Reports are allegations, not legal findings. The software does not prove that a 
 - Docker Compose deployment with Caddy and PostgreSQL
 - Encrypted backup and documented restore scripts
 
+## Public pages
+
+| Route      | Purpose                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| `/`        | The board: search, filter, file a report                                                   |
+| `/about`   | What the board is, how it works, terms of use, community guidelines, prohibited content    |
+| `/policy`  | Privacy policy, moderation policy, report removal policy, dispute policy, jurisdiction     |
+| `/contact` | The only contact channel — removals, corrections, disputes, conduct and security reports   |
+| `/admin`   | Moderation console (password protected)                                                    |
+
+There is no public email address. `/contact` writes to a private moderation queue in the database, so neither the
+operator nor a requester has to expose an identity to open a dispute. `/dispute` redirects to `/contact`.
+
+All fonts (Oswald, IBM Plex Sans, IBM Plex Mono) are self-hosted from the application. No request is made to Google,
+a CDN, or any third party from a visitor's browser.
+
 ## Repository map
 
 ```text
@@ -81,8 +97,11 @@ docker compose build
 
 ## Operations and policy
 
-- [PRIVACY.md](PRIVACY.md) explains stored data, browser tokens, rate limits, retention, and limitations.
-- [MODERATION.md](MODERATION.md) explains publication review, disputes, removals, and prohibited content.
+- [PRIVACY.md](PRIVACY.md) explains stored data, browser tokens, rate limits, retention, and limitations. The
+  visitor-facing version of this is published at `/policy`.
+- [MODERATION.md](MODERATION.md) explains publication review, disputes, removals, and prohibited content. The
+  visitor-facing version is split across `/policy#moderation` and `/about#prohibited`.
+- The site's terms of use and community guidelines live only in the application, at `/about`.
 - [BACKUP_AND_RESTORE.md](BACKUP_AND_RESTORE.md) covers encrypted daily backups and recovery.
 - [DEPLOYMENT.md](DEPLOYMENT.md) covers a provider-agnostic VPS deployment.
 

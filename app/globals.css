@@ -14,11 +14,14 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  font-family: "IBM Plex Sans Variable", "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.font-display { font-family: "Arial Narrow", "Roboto Condensed", Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.02em; }
-.font-data { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.font-display { font-family: "Oswald", "Arial Narrow", "Roboto Condensed", Arial, sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+.font-data { font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+
+::selection { background: #ffc400; color: #171412; }
 
 button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
@@ -204,8 +207,69 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   line-height: 1;
 }
 
+.doc-panel {
+  border: 2px solid #d8d3c8;
+  background: white;
+  padding: 1.6rem;
+}
+
+.doc-toc a {
+  display: block;
+  border-left: 3px solid #d8d3c8;
+  padding: 0.35rem 0 0.35rem 0.7rem;
+  color: #45403b;
+  font-family: "Oswald", "Arial Narrow", Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.doc-toc a:hover { border-left-color: #171412; color: #171412; }
+
+.doc-prose { color: #2f2b27; font-size: 0.95rem; line-height: 1.75; }
+.doc-prose > * + * { margin-top: 1rem; }
+.doc-prose h2 {
+  margin-top: 2.75rem;
+  border-bottom: 2px solid #171412;
+  padding-bottom: 0.4rem;
+  font-family: "Oswald", "Arial Narrow", Arial, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #171412;
+  scroll-margin-top: 1.5rem;
+}
+.doc-prose h3 {
+  margin-top: 1.9rem;
+  font-family: "Oswald", "Arial Narrow", Arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #171412;
+}
+.doc-prose ul, .doc-prose ol { padding-left: 1.15rem; }
+.doc-prose ul { list-style: square; }
+.doc-prose ol { list-style: decimal; }
+.doc-prose li + li { margin-top: 0.45rem; }
+.doc-prose a { color: #b34700; text-decoration: underline; text-underline-offset: 2px; }
+.doc-prose a:hover { color: #171412; }
+.doc-prose strong { font-weight: 700; color: #171412; }
+.doc-prose code { font-family: "IBM Plex Mono", monospace; font-size: 0.86em; background: #f3f1ec; padding: 0.1rem 0.3rem; }
+
+.doc-callout {
+  border-left: 6px solid #ffc400;
+  background: #fffaeb;
+  padding: 1rem 1.15rem;
+}
+
 @media (min-width: 640px) {
   .page-shell { width: min(1120px, calc(100% - 64px)); }
+  .doc-panel { padding: 2.5rem; }
   .report-card { padding: 1.75rem; }
   .modal-panel { padding: 2rem; }
 }

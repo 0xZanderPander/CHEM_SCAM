@@ -3,9 +3,10 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { Report, ReportStatus } from "@/db";
 import { randomNickname } from "@/lib/names";
-import { Brand } from "./Brand";
 import { NicknameField } from "./NicknameField";
 import { ReportCard } from "./ReportCard";
+import { SiteFooter } from "./SiteFooter";
+import { SiteHeader } from "./SiteHeader";
 
 const filters: Array<"All Reports" | ReportStatus> = ["All Reports", "Repeatedly Reported", "Community Confirmed", "Unverified", "Disputed"];
 
@@ -59,13 +60,10 @@ export function HomePage() {
 
   return (
     <main className="min-h-screen">
-      <header className="bg-[#171412] text-white">
-        <div className="page-shell flex items-center justify-between gap-4 py-4"><Brand /><button className="button-yellow" onClick={() => { setForm((current) => ({ ...current, startedAt: Date.now() })); setOpen(true); }}>+ File a report</button></div>
-        <div className="hazard-stripe" />
-      </header>
+      <SiteHeader action={<button className="button-yellow" onClick={() => { setForm((current) => ({ ...current, startedAt: Date.now() })); setOpen(true); }}>+ File a report</button>} />
 
       <div className="border-b border-[#d8d3c8] bg-white">
-        <div className="page-shell flex items-start gap-2.5 py-3 text-[13px] text-[#45403b]"><span aria-hidden="true">△</span><p><b>Community-submitted, unverified.</b> Reports reflect user allegations, not confirmed facts. Use your own judgment before acting on anything posted here.</p></div>
+        <div className="page-shell flex items-start gap-2.5 py-3 text-[13px] text-[#45403b]"><span aria-hidden="true">△</span><p><b>Community-submitted, unverified.</b> Reports reflect user allegations, not confirmed facts. Use your own judgment before acting on anything posted here. <a href="/about#how-it-works" className="underline underline-offset-2 hover:text-[#e8590c]">How this works</a> · <a href="/contact" className="underline underline-offset-2 hover:text-[#e8590c]">Request a removal</a></p></div>
       </div>
 
       <section className="page-shell py-8">
@@ -81,8 +79,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <div className="hazard-stripe mt-10" />
-      <footer className="border-t-2 border-[#171412] bg-white"><div className="page-shell grid gap-6 py-8 text-[13px] leading-6 text-[#45403b] md:grid-cols-2"><p><b className="font-display mb-1 block text-sm text-[#171412]">Legal notice</b>This website contains community-submitted reports and allegations. Reports have not necessarily been independently verified and should not be interpreted as legal findings. Exercise your own judgment before making decisions based on information posted here.</p><div className="font-display flex gap-6 md:justify-end"><a href="/dispute" className="hover:text-[#e8590c]">Correction requests</a><a href="https://github.com/0xZanderPander/CHEM_SCAM" rel="noreferrer" className="hover:text-[#e8590c]">Source</a><a href="/admin" className="hover:text-[#e8590c]">Admin</a></div></div></footer>
+      <SiteFooter />
 
       {open && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setOpen(false)}>
@@ -98,7 +95,7 @@ export function HomePage() {
                 <label className="absolute left-[-10000px]" aria-hidden="true">Company<input tabIndex={-1} autoComplete="off" value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} /></label>
                 {notice && <p className="text-sm font-bold" role="status">{notice}</p>}
                 <button className="button-primary justify-center py-3" disabled={submitting}>{submitting ? "Submitting…" : "Submit report"}</button>
-                <p className="text-center text-[11px] leading-5 text-[#6b6558]">By submitting, you confirm this report is made in good faith. False or malicious reports may be removed.</p>
+                <p className="text-center text-[11px] leading-5 text-[#6b6558]">By submitting, you confirm this report is made in good faith and agree to the <a href="/about#terms" className="underline underline-offset-2">terms</a> and <a href="/about#guidelines" className="underline underline-offset-2">community guidelines</a>. Do not include personal information about anyone. False or malicious reports may be removed.</p>
               </form>
             </div>
           </section>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/db";
+import { requestCategories, type RequestCategory } from "@/db/schema";
 import { enforceRateLimit, RateLimitError } from "@/lib/rate-limit";
 import { cleanText, limits, PublicInputError, readJsonBody, validateBotFields } from "@/lib/validation";
 
@@ -13,13 +14,20 @@ export async function POST(request: NextRequest) {
     const message = cleanText(body.message, limits.disputeMessage, "Message");
     const contactInfo = cleanText(body.contactInfo, limits.contactInfo, "Contact information", false) || null;
     const reportId = cleanText(body.reportId, 100, "Report reference", false) || null;
+    const requestedCategory = cleanText(body.category, 20, "Request type", false);
+    // An unrecognised value is rejected rather than silently coerced so that the
+    // moderation queue's triage counts stay trustworthy.
+    if (requestedCategory && !requestCategories.includes(requestedCategory as RequestCategory)) {
+      throw new PublicInputError("Please choose a valid request type.");
+    }
+    const category: RequestCategory = (requestedCategory as RequestCategory) || "general";
     if (reportId) {
       const report = await query("SELECT id FROM reports WHERE id = $1 AND publication_state = 'published' AND removed_at IS NULL", [reportId]);
       if (!report.rows[0]) throw new PublicInputError("The report reference was not found.");
     }
     await query(
-      "INSERT INTO dispute_requests (report_id, contact_info, message) VALUES ($1, $2, $3)",
-      [reportId, contactInfo, message],
+      "INSERT INTO dispute_requests (report_id, category, contact_info, message) VALUES ($1, $2, $3, $4)",
+      [reportId, category, contactInfo, message],
     );
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {

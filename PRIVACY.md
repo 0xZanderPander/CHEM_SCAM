@@ -4,7 +4,7 @@ This document describes the default PLACARD application behavior. An operator is
 
 ## What the application collects
 
-PLACARD has no public user accounts, requires no email address, and includes no analytics or advertising trackers. Public submissions can contain a nickname, scammer or website name, URL, description, comments, and supporting accounts. Published submissions, dates, counts, status, and nicknames are public. Contact information supplied through `/dispute` is visible only to administrators unless an operator deliberately republishes it.
+PLACARD has no public user accounts, requires no email address, and includes no analytics or advertising trackers. Public submissions can contain a nickname, scammer or website name, URL, description, comments, and supporting accounts. Published submissions, dates, counts, status, and nicknames are public. Contact information supplied through `/contact` is visible only to administrators unless an operator deliberately republishes it.
 
 PostgreSQL stores reports, supporting accounts, comments, flag and confirmation hashes, admin-session hashes and expiry, rate-limit records, moderation events, and dispute requests. Removed material is soft-deleted by default so moderation decisions can be reviewed; operators should establish a retention schedule and permanently purge material when it is no longer needed for moderation, security, disputes, or applicable legal obligations.
 
@@ -32,10 +32,10 @@ No internet service can promise absolute anonymity or security. Browser compromi
 
 ## Removal and correction requests
 
-Use `/dispute` to request a correction, status review, or removal. Contact information is optional and can be any return channel. The queue is a practical moderation channel, not a formal legal-notice system. See [MODERATION.md](MODERATION.md).
+Use `/contact` to request a correction, status review, or removal. Contact information is optional and can be any return channel. The queue is a practical moderation channel, not a formal legal-notice system. See [MODERATION.md](MODERATION.md).
 
 ## Iceland and EEA context
 
 The reference service is intended for infrastructure in Iceland, whose legal framework includes protections for publishing and freedom of expression associated with the Icelandic Modern Media Initiative. This is not immunity. Iceland is in the European Economic Area, and its [Data Protection Act No. 90/2018](https://www.personuvernd.is/media/uncategorized/Act_No_90_2018_on_Data_Protection_and_the_Processing_of_Personal_Data.pdf) implements the GDPR framework; the [EFTA Secretariat records the GDPR's entry into force in the EEA](https://www.efta.int/media-resources/news/general-data-protection-regulation-gdpr-entered-force-eea).
 
-An EU/EEA resident named in a report may have a data-protection complaint distinct from a defamation or takedown claim. Free-expression protections do not by themselves resolve that issue. Hosting jurisdiction affects claims involving the service and infrastructure, but does not necessarily determine an individual operator's exposure in the operator's country of residence. This is general context, not legal advice or a guarantee of legal immunity. Regardless of legal theory, `/dispute` is the correction and removal channel.
+An EU/EEA resident named in a report may have a data-protection complaint distinct from a defamation or takedown claim. Free-expression protections do not by themselves resolve that issue. Hosting jurisdiction affects claims involving the service and infrastructure, but does not necessarily determine an individual operator's exposure in the operator's country of residence. This is general context, not legal advice or a guarantee of legal immunity. Regardless of legal theory, `/contact` is the correction and removal channel.

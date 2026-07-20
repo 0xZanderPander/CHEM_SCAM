@@ -15,6 +15,13 @@
       "when": 1784556950300,
       "tag": "0001_thin_scorpion",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784568326113,
+      "tag": "0002_contact_request_categories",
+      "breakpoints": true
     }
   ]
 }

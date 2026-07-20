@@ -1,0 +1,3 @@
+ALTER TABLE "dispute_requests" ADD COLUMN "category" text DEFAULT 'general' NOT NULL;--> statement-breakpoint
+CREATE INDEX "dispute_requests_triage_idx" ON "dispute_requests" USING btree ("resolved","category","created_at");--> statement-breakpoint
+ALTER TABLE "dispute_requests" ADD CONSTRAINT "dispute_requests_category_check" CHECK ("dispute_requests"."category" IN ('removal', 'correction', 'dispute', 'conduct', 'security', 'general'));
