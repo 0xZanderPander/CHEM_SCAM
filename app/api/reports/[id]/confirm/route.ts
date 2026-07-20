@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { refreshStatus, transaction } from "@/db";
+import { lockReportCounters, refreshReportAggregates, transaction } from "@/db";
 import { enforceRateLimit, RateLimitError } from "@/lib/rate-limit";
 import { browserTokenHash } from "@/lib/security";
 import { cleanText, PublicInputError, readJsonBody } from "@/lib/validation";
@@ -18,11 +18,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const token = cleanText(body.browserToken, 200, "Browser token");
     const confirmationHash = browserTokenHash(token, "confirmation");
     await transaction(async (client) => {
-      const report = await client.query("SELECT id FROM reports WHERE id = $1 AND publication_state = 'published' AND removed_at IS NULL", [id]);
+      await lockReportCounters(id, client);
+      const report = await client.query("SELECT id FROM reports WHERE id = $1 AND publication_state = 'published' AND removed_at IS NULL FOR UPDATE", [id]);
       if (!report.rows[0]) throw new PublicInputError("Report not found.");
       await client.query("INSERT INTO confirmations (report_id, confirmation_hash) VALUES ($1, $2)", [id, confirmationHash]);
-      await client.query("UPDATE reports SET confirmation_count = confirmation_count + 1 WHERE id = $1", [id]);
-      await refreshStatus(id, client);
+      await refreshReportAggregates(id, client);
     });
     return NextResponse.json({ ok: true });
   } catch (error) {

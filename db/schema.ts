@@ -1,5 +1,6 @@
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -11,9 +12,11 @@ import {
   uuid,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export type ReportStatus = "Unverified" | "Community Confirmed" | "Repeatedly Reported" | "Disputed";
 export type PublicationState = "published" | "pending_review" | "removed";
+export type DisputeResolutionType = "no_action" | "report_marked_disputed" | "report_removed" | "report_corrected" | "other";
 
 export const reports = pgTable("reports", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -107,4 +110,10 @@ export const disputeRequests = pgTable("dispute_requests", {
   resolved: boolean("resolved").notNull().default(false),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
   resolvedNote: text("resolved_note"),
-});
+  resolutionType: text("resolution_type").$type<DisputeResolutionType>(),
+}, (table) => [
+  check(
+    "dispute_requests_resolution_type_check",
+    sql`${table.resolutionType} IS NULL OR ${table.resolutionType} IN ('no_action', 'report_marked_disputed', 'report_removed', 'report_corrected', 'other')`,
+  ),
+]);

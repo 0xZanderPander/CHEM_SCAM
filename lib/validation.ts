@@ -37,6 +37,7 @@ export function safeWebsite(value: unknown) {
   if (!normalized) throw new PublicInputError("Please enter a valid HTTP or HTTPS website address.");
   const parsed = new URL(/^https?:\/\//i.test(website) ? website : `https://${website}`);
   if (!(["http:", "https:"] as string[]).includes(parsed.protocol)) throw new PublicInputError("Only HTTP and HTTPS website links are allowed.");
+  if (parsed.username || parsed.password) throw new PublicInputError("Website links cannot include embedded credentials.");
   return { website: parsed.toString(), normalizedDomain: normalized };
 }
 
@@ -74,4 +75,3 @@ export async function readJsonBody(request: Request, maxBytes = 32_768) {
     throw new PublicInputError("Invalid request.");
   }
 }
-

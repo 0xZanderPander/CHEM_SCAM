@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, refreshStatus, transaction, type Report } from "@/db";
+import { lockReportCounters, query, refreshReportAggregates, transaction, type Report } from "@/db";
 import { enforceRateLimit, RateLimitError } from "@/lib/rate-limit";
 import {
   cleanText,
   limits,
+  normalizedName,
   PublicInputError,
   readJsonBody,
   safeWebsite,
@@ -23,14 +24,14 @@ const publicReportSelect = `
   FROM reports`;
 
 export async function GET(request: NextRequest) {
-  const search = request.nextUrl.searchParams.get("q")?.trim() || "";
+  const search = request.nextUrl.searchParams.get("q")?.trim().slice(0, 200) || "";
   const values: unknown[] = [];
   let filter = "publication_state = 'published' AND removed_at IS NULL";
   if (search) {
     values.push(`%${search.toLowerCase()}%`);
     filter += " AND (LOWER(scammer_name) LIKE $1 OR LOWER(COALESCE(normalized_domain, '')) LIKE $1)";
   }
-  const result = await query<Report>(`${publicReportSelect} WHERE ${filter} ORDER BY created_at DESC`, values);
+  const result = await query<Report>(`${publicReportSelect} WHERE ${filter} ORDER BY created_at DESC LIMIT 200`, values);
   return NextResponse.json({ reports: result.rows });
 }
 
@@ -47,25 +48,35 @@ export async function POST(request: NextRequest) {
     const publicationState = sensitiveReasons.length ? "pending_review" : "published";
 
     const active = await query<Report>(
-      `${publicReportSelect} WHERE removed_at IS NULL ORDER BY created_at ASC`,
+      `${publicReportSelect}
+       WHERE publication_state = 'published' AND removed_at IS NULL
+         AND (($1::text IS NOT NULL AND normalized_domain = $1)
+           OR regexp_replace(lower(scammer_name), '[^[:alnum:]]+', ' ', 'g') = $2)
+       ORDER BY CASE WHEN normalized_domain = $1 THEN 0 ELSE 1 END, created_at ASC LIMIT 50`,
+      [normalizedDomain, normalizedName(scammerName)],
     );
     const { domainMatch, nameMatch } = findDuplicateCandidates(active.rows, scammerName, normalizedDomain);
 
     if (domainMatch) {
       await transaction(async (client) => {
-        await client.query(
+        await lockReportCounters(domainMatch.id, client);
+        const parent = await client.query(
+          "SELECT id FROM reports WHERE id = $1 AND publication_state = 'published' AND removed_at IS NULL FOR UPDATE",
+          [domainMatch.id],
+        );
+        if (!parent.rows[0]) throw new PublicInputError("Report not found.");
+        const duplicate = await client.query<{ id: string }>(
           `INSERT INTO duplicate_reports (report_id, nickname, description, website, publication_state)
-           VALUES ($1, $2, $3, $4, $5)`,
+           VALUES ($1, $2, $3, $4, $5) RETURNING id`,
           [domainMatch.id, nickname, description, website, publicationState],
         );
-        await client.query("UPDATE reports SET duplicate_count = duplicate_count + 1 WHERE id = $1", [domainMatch.id]);
         if (sensitiveReasons.length) {
           await client.query(
             "INSERT INTO moderation_events (action, target_type, target_id, metadata) VALUES ('auto_pending_review', 'duplicate_report', $1, $2)",
-            [domainMatch.id, JSON.stringify({ reasons: sensitiveReasons })],
+            [duplicate.rows[0].id, JSON.stringify({ reasons: sensitiveReasons, reportId: domainMatch.id })],
           );
         }
-        await refreshStatus(domainMatch.id, client);
+        await refreshReportAggregates(domainMatch.id, client);
       });
       return NextResponse.json({ id: domainMatch.id, duplicate: true, pendingReview: Boolean(sensitiveReasons.length) }, { status: 201 });
     }

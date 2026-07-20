@@ -32,7 +32,7 @@ docker compose up -d
 docker compose ps
 ```
 
-Migration is an explicit deployment step; the application never changes the schema at startup. PostgreSQL publishes no host port, Next.js is reachable only on Docker's internal frontend, and Caddy alone publishes 80/443. Check `https://YOUR_DOMAIN/api/health` after DNS and TLS settle.
+Migration is an explicit deployment step; the application never changes the schema at startup. Migration `0001_thin_scorpion.sql` adds dispute-resolution classification and performs a one-time count backfill from confirmations and published, non-removed supporting accounts while preserving `Disputed` statuses. PostgreSQL publishes no host port, Next.js is reachable only on Docker's internal frontend, and Caddy alone publishes 80/443. Check `https://YOUR_DOMAIN/api/health` after DNS and TLS settle.
 
 ## Updates
 

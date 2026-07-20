@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Comment, DuplicateReport, Report } from "@/db";
 import { randomNickname } from "@/lib/names";
+import { publicWebsiteHref } from "@/lib/urls";
 import { Brand } from "./Brand";
 import { NicknameField } from "./NicknameField";
 
@@ -71,6 +72,7 @@ export function ReportDetail({ id }: { id: string }) {
   if (!data) return <div className="page-shell py-20">Loading report…</div>;
 
   const { report, duplicates, comments } = data;
+  const websiteHref = publicWebsiteHref(report.website);
   return (
     <main className="min-h-screen pb-16">
       <header className="bg-[#171412] text-white">
@@ -89,7 +91,7 @@ export function ReportDetail({ id }: { id: string }) {
                 <span className="text-xs text-neutral-500">Posted {new Intl.DateTimeFormat("en", { dateStyle: "long" }).format(new Date(report.created_at))}</span>
               </div>
               <h1 className="mt-6 text-3xl font-black tracking-[-0.045em] sm:text-5xl">{report.scammer_name}</h1>
-              {report.domain && <a className="mt-2 inline-block font-bold text-neutral-500 hover:text-neutral-950" href={report.website?.match(/^https?:\/\//i) ? report.website : `https://${report.website}`} target="_blank" rel="noreferrer nofollow">{report.domain} ↗</a>}
+              {report.domain && websiteHref && <a className="mt-2 inline-block font-bold text-neutral-500 hover:text-neutral-950" href={websiteHref} target="_blank" rel="noreferrer nofollow">{report.domain} ↗</a>}
               <p className="mt-8 whitespace-pre-wrap text-base leading-8 text-neutral-700">{report.description}</p>
               <div className="mt-8 border-t border-neutral-200 pt-5 text-sm text-neutral-500">Submitted anonymously by <b className="text-neutral-800">{report.nickname}</b></div>
             </article>

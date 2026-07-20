@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { automaticStatus, calculatedStatus } from "@/lib/status";
+import { automaticStatus, calculatedStatus, countActiveDuplicates } from "@/lib/status";
 import { findDuplicateCandidates } from "@/lib/duplicates";
 import { browserTokenHash, csrfValid, hmacHex } from "@/lib/security";
-import { sessionIsActive, validAdminPassword } from "@/lib/admin";
+import { sessionIsActive, sessionShouldBeCleaned, validAdminPassword } from "@/lib/admin";
 import { rateLimitExceeded } from "@/lib/rate-limit";
+import { publicWebsiteHref } from "@/lib/urls";
 import {
   PublicInputError,
   normalizedDomain,
@@ -28,10 +29,18 @@ describe("report input and duplicate decisions", () => {
   it("rejects malformed and dangerous website schemes", () => {
     expect(() => safeWebsite("javascript:alert(1)")).toThrow(PublicInputError);
     expect(() => safeWebsite("http://[not-valid")).toThrow(PublicInputError);
+    expect(() => safeWebsite("https://user:secret@example.com")).toThrow(PublicInputError);
   });
 
   it("accepts an HTTP website and returns a normalized domain", () => {
     expect(safeWebsite("example.com/path")).toEqual({ website: "https://example.com/path", normalizedDomain: "example.com" });
+  });
+
+  it("never renders non-HTTP stored URLs", () => {
+    expect(publicWebsiteHref("https://example.com/path")).toBe("https://example.com/path");
+    expect(publicWebsiteHref("javascript:alert(1)")).toBeNull();
+    expect(publicWebsiteHref("https://user:secret@example.com")).toBeNull();
+    expect(publicWebsiteHref("not a URL")).toBeNull();
   });
 
   it("selects an exact domain for automatic attachment", () => {
@@ -86,6 +95,27 @@ describe("status, sessions, admin protection, and limits", () => {
     expect(automaticStatus("Unverified", 3, 0)).toBe("Community Confirmed");
   });
 
+  it("does not count pending duplicates or promote their report", () => {
+    const onePending = [{ publicationState: "pending_review", removedAt: null }];
+    const twoPending = [...onePending, ...onePending];
+    expect(countActiveDuplicates(onePending)).toBe(0);
+    expect(countActiveDuplicates(twoPending)).toBe(0);
+    expect(automaticStatus("Unverified", 0, countActiveDuplicates(twoPending))).toBe("Unverified");
+  });
+
+  it("updates counts and status as duplicates are published and removed", () => {
+    const rows: Array<{ publicationState: string; removedAt: Date | null }> = [
+      { publicationState: "published", removedAt: null },
+      { publicationState: "published", removedAt: null },
+    ];
+    expect(countActiveDuplicates(rows)).toBe(2);
+    expect(automaticStatus("Unverified", 0, countActiveDuplicates(rows))).toBe("Repeatedly Reported");
+    rows[1] = { publicationState: "removed", removedAt: new Date() };
+    expect(countActiveDuplicates(rows)).toBe(1);
+    expect(automaticStatus("Repeatedly Reported", 0, countActiveDuplicates(rows))).toBe("Unverified");
+    expect(automaticStatus("Disputed", 0, countActiveDuplicates(rows))).toBe("Disputed");
+  });
+
   it("compares the configured admin password", async () => {
     await expect(validAdminPassword("correct horse battery staple")).resolves.toBe(true);
     await expect(validAdminPassword("wrong")).resolves.toBe(false);
@@ -96,6 +126,14 @@ describe("status, sessions, admin protection, and limits", () => {
     expect(sessionIsActive(new Date("2026-01-01T01:00:00Z"), null, now)).toBe(true);
     expect(sessionIsActive(new Date("2025-12-31T23:00:00Z"), null, now)).toBe(false);
     expect(sessionIsActive(new Date("2026-01-01T01:00:00Z"), now, now)).toBe(false);
+  });
+
+  it("cleans only sessions older than the retention window", () => {
+    const now = new Date("2026-01-10T00:00:00Z");
+    expect(sessionShouldBeCleaned(new Date("2026-01-02T00:00:00Z"), null, now, 7)).toBe(true);
+    expect(sessionShouldBeCleaned(new Date("2026-01-10T01:00:00Z"), new Date("2026-01-02T00:00:00Z"), now, 7)).toBe(true);
+    expect(sessionShouldBeCleaned(new Date("2026-01-09T00:00:00Z"), null, now, 7)).toBe(false);
+    expect(sessionShouldBeCleaned(new Date("2026-01-10T01:00:00Z"), new Date("2026-01-09T00:00:00Z"), now, 7)).toBe(false);
   });
 
   it("enforces the configured limit boundary", () => {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/db";
-import { validAdminPassword } from "@/lib/admin";
+import { ADMIN_SESSION_RETENTION_DAYS, validAdminPassword } from "@/lib/admin";
 import { enforceRateLimit, RateLimitError } from "@/lib/rate-limit";
 import { ADMIN_COOKIE, adminSessionHash, CSRF_COOKIE, randomToken } from "@/lib/security";
 import { validateProductionEnvironment } from "@/lib/env";
@@ -20,6 +20,12 @@ export async function POST(request: NextRequest) {
     const token = randomToken();
     const csrf = randomToken(24);
     const maxAge = 60 * 60 * 8;
+    await query(
+      `DELETE FROM admin_sessions
+       WHERE expires_at < NOW() - ($1::int * INTERVAL '1 day')
+          OR (revoked_at IS NOT NULL AND revoked_at < NOW() - ($1::int * INTERVAL '1 day'))`,
+      [ADMIN_SESSION_RETENTION_DAYS],
+    );
     await query(
       "INSERT INTO admin_sessions (token_hash, expires_at) VALUES ($1, NOW() + INTERVAL '8 hours')",
       [adminSessionHash(token)],

@@ -14,8 +14,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const token = cleanText(body.browserToken, 200, "Browser token");
     const flaggerHash = browserTokenHash(token, "comment-flag");
     await transaction(async (client) => {
+      const comment = await client.query(
+        "SELECT id FROM comments WHERE id = $1 AND publication_state = 'published' AND removed_at IS NULL FOR UPDATE",
+        [id],
+      );
+      if (!comment.rows[0]) throw new PublicInputError("Comment not found.");
       await client.query("INSERT INTO comment_flags (comment_id, flagger_hash) VALUES ($1, $2)", [id, flaggerHash]);
-      await client.query("UPDATE comments SET flag_count = flag_count + 1 WHERE id = $1", [id]);
+      await client.query("UPDATE comments SET flag_count = (SELECT COUNT(*)::int FROM comment_flags WHERE comment_id = $1) WHERE id = $1", [id]);
     });
     return NextResponse.json({ ok: true });
   } catch (error) {
@@ -25,4 +30,3 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json({ error: "Comment could not be reported." }, { status: 500 });
   }
 }
-

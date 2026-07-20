@@ -15,6 +15,13 @@ export function sessionIsActive(expiresAt: Date, revokedAt: Date | null, now = n
   return !revokedAt && expiresAt.getTime() > now.getTime();
 }
 
+export const ADMIN_SESSION_RETENTION_DAYS = 7;
+
+export function sessionShouldBeCleaned(expiresAt: Date, revokedAt: Date | null, now = new Date(), retentionDays = ADMIN_SESSION_RETENTION_DAYS) {
+  const cutoff = now.getTime() - retentionDays * 24 * 60 * 60 * 1_000;
+  return expiresAt.getTime() < cutoff || Boolean(revokedAt && revokedAt.getTime() < cutoff);
+}
+
 export async function isAdminRequest(request: NextRequest) {
   const token = request.cookies.get(ADMIN_COOKIE)?.value;
   if (!token) return false;

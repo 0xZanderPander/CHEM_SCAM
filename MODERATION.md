@@ -28,7 +28,7 @@ Three confirmations may automatically produce `Community Confirmed`; two attache
 
 ## Disputes, corrections, and removals
 
-Anyone can use `/dispute`; a report-detail link pre-fills the listing reference. The requester supplies a message and may optionally leave a contact channel. An administrator can correct or remove content, mark the listing disputed, merge it, record a resolution note, or decline a request. The form is a moderation queue and not a formal legal-notice workflow.
+Anyone can use `/dispute`; a report-detail link pre-fills the listing reference. The requester supplies a message and may optionally leave a contact channel. Resolving a request requires an administrator to choose a recorded resolution type and write a note. Marking a linked report disputed or removed applies that action in the same database transaction; no-action, corrected, and other resolutions record the decision without making an automatic report change. The form is a moderation queue and not a formal legal-notice workflow.
 
 Removal decisions should consider relevance, evidence supplied, unnecessary personal data, risk of harm, applicable law, and whether a narrower correction or disputed label is sufficient. The operator should document any legally required retention or notice process separately.
 

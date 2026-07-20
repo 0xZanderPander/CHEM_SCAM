@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Report } from "@/db";
+import { publicWebsiteHref } from "@/lib/urls";
 
 const statusTone: Record<Report["status"], string> = {
   Unverified: "diamond-unverified",
@@ -24,6 +25,7 @@ function browserToken() {
 export function ReportCard({ report, onConfirmed }: { report: Report; onConfirmed: () => void }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const websiteHref = publicWebsiteHref(report.website);
 
   async function confirm() {
     setBusy(true);
@@ -52,8 +54,8 @@ export function ReportCard({ report, onConfirmed }: { report: Report; onConfirme
             </h2>
             <span className={`status-label ${report.status === "Disputed" ? "text-[#c81e1e]" : report.status === "Repeatedly Reported" ? "text-[#e8590c]" : report.status === "Community Confirmed" ? "text-[#1b5fa8]" : "text-[#6b6558]"}`}>{report.status}</span>
           </div>
-          {report.domain ? (
-            <a href={report.website?.match(/^https?:\/\//i) ? report.website : `https://${report.website}`} target="_blank" rel="noreferrer nofollow" className="font-data mt-1 inline-block break-all text-sm text-[#6b6558] hover:text-[#e8590c]">{report.domain}</a>
+          {report.domain && websiteHref ? (
+            <a href={websiteHref} target="_blank" rel="noreferrer nofollow" className="font-data mt-1 inline-block break-all text-sm text-[#6b6558] hover:text-[#e8590c]">{report.domain}</a>
           ) : <p className="font-data mt-1 text-sm text-[#6b6558]">No website supplied</p>}
           <p className="mt-3 text-[15px] leading-7 text-[#2b2724]">{report.description}</p>
           <div className="font-data mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-[#6b6558]">

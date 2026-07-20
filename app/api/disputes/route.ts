@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const contactInfo = cleanText(body.contactInfo, limits.contactInfo, "Contact information", false) || null;
     const reportId = cleanText(body.reportId, 100, "Report reference", false) || null;
     if (reportId) {
-      const report = await query("SELECT id FROM reports WHERE id = $1", [reportId]);
+      const report = await query("SELECT id FROM reports WHERE id = $1 AND publication_state = 'published' AND removed_at IS NULL", [reportId]);
       if (!report.rows[0]) throw new PublicInputError("The report reference was not found.");
     }
     await query(
@@ -29,4 +29,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Request could not be submitted." }, { status: 500 });
   }
 }
-

@@ -23,6 +23,6 @@ describe("PostgreSQL privacy and moderation schema", () => {
   it("supports soft removal, audit events, and dispute requests", () => {
     expect(Object.keys(reports)).toEqual(expect.arrayContaining(["publicationState", "removedAt", "possibleDuplicateOf"]));
     expect(Object.keys(moderationEvents)).toEqual(expect.arrayContaining(["action", "targetType", "targetId", "metadata"]));
-    expect(Object.keys(disputeRequests)).toEqual(expect.arrayContaining(["reportId", "contactInfo", "message", "resolved", "resolvedAt", "resolvedNote"]));
+    expect(Object.keys(disputeRequests)).toEqual(expect.arrayContaining(["reportId", "contactInfo", "message", "resolved", "resolvedAt", "resolvedNote", "resolutionType"]));
   });
 });
